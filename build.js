@@ -7,7 +7,7 @@ const SRC_DIR = 'src';
 const FLAGS = {
     useRegPack: true,
     decompressRegPack: true,
-    usePrecisionHeader: true,
+    usePrecisionHeader: false,
 };
 
 const shortVarNames = _.range(10, 36)

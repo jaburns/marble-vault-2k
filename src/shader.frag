@@ -48,14 +48,13 @@ void main()
         pos += 0.01 * vel;
         vel *= 0.95;
 
+        gl_FragColor = vec4(0); // g[3] 
+
         if (coord.x < 2.) {
-            gl_FragColor = vec4(writeFloat(pos.x), writeFloat(pos.y));
+            gl_FragColor = vec4(writeFloat(pos.x), writeFloat(pos.y)); // g[1]
         }
         else if (coord.x < 3.) {
-            gl_FragColor = vec4(writeFloat(vel.x), writeFloat(vel.y));
-        }
-        else {
-            gl_FragColor = vec4(0);
+            gl_FragColor = vec4(writeFloat(vel.x), writeFloat(vel.y)); // g[2]
         }
     }
 }
