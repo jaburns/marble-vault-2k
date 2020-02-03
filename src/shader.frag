@@ -56,7 +56,7 @@ highp float map(highp vec2 p, highp float seed)
 highp vec3 drawmap(highp vec2 pos, highp float seed)
 {
     highp float y = map(pos, seed);
-    return y < -.045 ? vec3(0) : y < 0. ? vec3(0,0,1) : vec3(0,1,0);
+    return y < -.045 ? vec3(0) : y < 0. ? vec3(.2,0,0) : vec3(0,pow(y+1.,4.)-.7,0);
 }
 
 highp vec3 worldColor(highp vec2 uv, highp float t, highp float seed)
