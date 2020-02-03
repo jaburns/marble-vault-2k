@@ -24,6 +24,7 @@ void main()
     bool right = mod(g[0].z / 2., 2.) > .9;
     bool up    = mod(g[0].z / 4., 2.) > .9;
     bool down  = mod(g[0].z / 8., 2.) > .9;
+    highp float seed = floor(g[0].z / 16.) / 999.;
 
 // Rendering
 
@@ -48,7 +49,7 @@ void main()
         pos += 0.01 * vel;
         vel *= 0.95;
 
-        gl_FragColor = vec4(0); // g[3] 
+        gl_FragColor = vec4(writeFloat(seed), 0, 0);
 
         if (coord.x < 2.) {
             gl_FragColor = vec4(writeFloat(pos.x), writeFloat(pos.y)); // g[1]
