@@ -12,7 +12,7 @@ const FLAGS = {
 
 const shortVarNames = _.range(10, 36)
     .map(x => x.toString(36))
-    .filter(x => x !== 'g' && x !== 'a');
+    .filter(x => x !== 'g' && x !== 'a' && x !== 's');
 
 const stripComments = js => js
     .replace(/\/\*[^\*]*\*\//g, '')
@@ -129,7 +129,7 @@ const main = () => {
             '--crushTiebreakerFactor 0 '+
             '--hashWebGLContext true '+
             '--contextVariableName g '+
-            '--varsNotReassigned g,a '+
+            '--varsNotReassigned g,a,s '+
             '--useES6 true ' +
             'tmp_in.js > tmp_out.js'
         );

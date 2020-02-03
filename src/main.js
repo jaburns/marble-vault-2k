@@ -48,6 +48,7 @@ setInterval($b => (
     $stateBufferArray = Array.from($stateBuffer),
     $stateBufferArray[0] = a.width = innerWidth,
     $stateBufferArray[1] = a.height = innerHeight,
-    $stateBufferArray[2] = $keys[37] + 2*$keys[39]
+    $stateBufferArray[2] = $keys[37] + 2*$keys[39],
+    s.innerText = Math.random()
 //  ,console.log($stateBufferArray)
 ), 16)
