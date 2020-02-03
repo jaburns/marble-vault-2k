@@ -20,14 +20,18 @@ void main()
     highp vec2 pos = vec2(readFloat(g[1].xy), readFloat(g[1].zw));
     highp vec2 vel = vec2(readFloat(g[2].xy), readFloat(g[2].zw));
 
-    bool left = mod(g[0].z, 2.) > 0.;
-    bool right = g[0].z > 1.9;
+    bool left  = mod(g[0].z,      2.) > .9;
+    bool right = mod(g[0].z / 2., 2.) > .9;
+    bool up    = mod(g[0].z / 4., 2.) > .9;
+    bool down  = mod(g[0].z / 8., 2.) > .9;
 
 // Rendering
 
     highp vec2 m = (coord - g[0].xy * .5) / g[0].y;
-    m.x += pos.x;
-    highp vec3 col = length(m) > .1 ? vec3(0) : left ? vec3(1,0,0) : right ? vec3(0,1,0) : vec3(1);
+
+    m -= pos;
+
+    highp vec3 col = length(m) > .1 ? vec3(0) : vec3(.714,.376,.706);
     highp float x = max((6.*length(m-vec2(.04))) + .9,0.);
     col *= 1./x/x;
     gl_FragColor = vec4(col,1);
@@ -36,8 +40,10 @@ void main()
 
     if (coord.y < 1. && coord.x < 4.)
     {
-        if (left) vel.x += 0.1;
-        if (right) vel.x -= 0.1;
+        if (left)  vel.x -= 0.1;
+        if (right) vel.x += 0.1;
+        if (up)    vel.y += 0.1;
+        if (down)  vel.y -= 0.1;
 
         pos += 0.01 * vel;
         vel *= 0.95;
