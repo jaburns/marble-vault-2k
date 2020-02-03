@@ -22,10 +22,10 @@ g.vertexAttribPointer(
     g.BYTE,
     g.enableVertexAttribArray(g.useProgram($shader)),
     g.bindBuffer($a = g.ARRAY_BUFFER, g.createBuffer()),
-    g.bufferData($a, Uint8Array.of(2, 2, 2, 252, 252, 2), $a + 82) // ARRAY_BUFFER + 82 = STATIC_DRAW; 252 = -4
+    g.bufferData($a, Uint8Array.of(28, 28, 28, 128, 128, 28), $a + 82) // ARRAY_BUFFER + 82 = STATIC_DRAW; 128 = -127
 ),
 
-$stateBufferArray = [4,4,0,0,127,0,0,0,0,0,0,0,0,0,0,0],
+$stateBufferArray = [128,1,128,1,128,1,128,1,128,1,128,1,128,1,128,1],
 $stateBuffer = new Uint8Array(16),
 
 $keys = {37:0, 39:0}, // 37 = Left arrow, 39 = Right arrow

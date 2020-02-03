@@ -1,6 +1,7 @@
 uniform highp mat4 g;
 
-highp vec2 writeFloat(highp float a) {
+highp vec2 writeFloat(highp float a)
+{
     a = (a + 1.) / 2.;
     return vec2(
         floor(a*255.) / 255.,
@@ -8,29 +9,47 @@ highp vec2 writeFloat(highp float a) {
     );
 }
 
-highp float readFloat(highp vec2 a) {
+highp float readFloat(highp vec2 a)
+{
     return (a.x/255. + a.y/255./255.) * 2. - 1.;
 }
 
-void main() {
-    highp vec2 pos = gl_FragCoord.xy;
+void main()
+{
+    highp vec2 coord = gl_FragCoord.xy;
+    highp vec2 pos = vec2(readFloat(g[1].xy), readFloat(g[1].zw));
+    highp vec2 vel = vec2(readFloat(g[2].xy), readFloat(g[2].zw));
 
     bool left = mod(g[0].z, 2.) > 0.;
     bool right = g[0].z > 1.9;
 
-    if (pos.y < 1. && pos.x < 4.) {
-        highp vec2 pos = vec2(readFloat(g[1].xy), readFloat(g[1].zw));
-        if (left) pos.x += 0.001;
-        if (right) pos.x -= 0.001;
-        gl_FragColor = vec4(writeFloat(pos.x), writeFloat(-1.));
-    } else {
-        highp vec2 m = (pos - g[0].xy * .5) / g[0].y;
-        highp vec2 pos = vec2(readFloat(g[1].xy), readFloat(g[1].zw));
-        m.x += pos.x;
+// Rendering
 
-        highp vec3 col = length(m) > .1 ? vec3(0) : left ? vec3(1,0,0) : right ? vec3(0,1,0) : vec3(1);
-        highp float x = max((6.*length(m-vec2(.04))) + .9,0.);
-        col *= 1./x/x;
-        gl_FragColor = vec4(col,1);
+    highp vec2 m = (coord - g[0].xy * .5) / g[0].y;
+    m.x += pos.x;
+    highp vec3 col = length(m) > .1 ? vec3(0) : left ? vec3(1,0,0) : right ? vec3(0,1,0) : vec3(1);
+    highp float x = max((6.*length(m-vec2(.04))) + .9,0.);
+    col *= 1./x/x;
+    gl_FragColor = vec4(col,1);
+
+// State update
+
+    if (coord.y < 1. && coord.x < 4.)
+    {
+        if (left) vel.x += 0.1;
+        if (right) vel.x -= 0.1;
+
+        pos += 0.01 * vel;
+        vel *= 0.95;
+
+        if (coord.x < 2.) {
+            gl_FragColor = vec4(writeFloat(pos.x), writeFloat(pos.y));
+        }
+        else if (coord.x < 3.) {
+            gl_FragColor = vec4(writeFloat(vel.x), writeFloat(vel.y));
+        }
+        else {
+            gl_FragColor = vec4(0);
+        }
     }
 }
