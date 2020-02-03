@@ -28,7 +28,7 @@ g.vertexAttribPointer(
 $stateBufferArray = [128,1,128,1,128,1,128,1,128,1,128,1,128,1,128,1],
 $stateBuffer = new Uint8Array(16),
 
-$keys = {37:0, 38:0, 39:0, 40:0}, // 37 = Left arrow, 38 = Up arrow, 39 = Right arrow, 40 = Down arrow
+$keys = {}, // 37 = Left arrow, 38 = Up arrow, 39 = Right arrow, 40 = Down arrow
 document.onkeydown = $a => $keys[$a.keyCode] = 1;
 document.onkeyup   = $a => $keys[$a.keyCode] = 0;
 
@@ -48,7 +48,7 @@ setInterval($b => (
     $stateBufferArray = Array.from($stateBuffer),
     $stateBufferArray[0] = a.width = innerWidth,
     $stateBufferArray[1] = a.height = innerHeight,
-    $stateBufferArray[2] = $keys[37] + 2*$keys[39] + 4*$keys[38] + 8*$keys[40],
-    s.innerText = ($stateBufferArray[4]/255 + $stateBufferArray[5]/255/255) * 2 - 1
+    $stateBufferArray[2] = $keys[37]|0 + 2*$keys[39]|0 + 4*$keys[38]|0 + 8*$keys[40]|0
+//  ,s.innerText = ($stateBufferArray[8]/255 + $stateBufferArray[9]/255/255) * 2 - 1
 //  ,console.log($stateBufferArray)
 ), 16)
