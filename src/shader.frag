@@ -16,6 +16,40 @@ highp float readFloat(highp vec2 a)
 
 // ==============================================================
 
+const highp vec3 A = vec3(223.0 / 255.0, 61.0 / 255.0, 161.0 / 255.0);
+const highp vec3 B = vec3(192.0 / 255.0, 52.0 / 255.0, 133.0 / 255.0);
+const highp vec3 C = vec3(166.0 / 255.0, 55.0 / 255.0, 115.0 / 255.0);
+
+highp vec3 STRIPES(highp float i)
+{
+    i = mod(i, 8.0);
+    return i < 1. ? A
+        : i < 2. ? B
+        : i < 3. ? C
+        : i < 4. ? B
+        : i < 5. ? A
+        : i < 6. ? C
+        : i < 7. ? B
+        : C;
+}
+highp vec3 stripes(highp vec2 xy)
+{
+    highp vec2 uv = mod(xy, vec2(1.0));
+    highp float t = 8.0 * (uv.x + 2.0 - uv.y);
+    return STRIPES(t + 0.5);
+}
+highp vec3 gnd(highp vec2 xy, highp float d)
+{
+    d = clamp(d, 0., 1.);
+    highp float one_minus_gnd = 1. - d;
+    highp float round_off = 1. - sqrt(1. - one_minus_gnd*one_minus_gnd);
+    return stripes(xy + 0.2*vec2(-round_off,round_off)) * pow(clamp(d+.5,.5,1.),2.);
+}
+
+
+
+
+
 highp float rand(highp vec2 co)
 {
     return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
@@ -55,16 +89,16 @@ highp float map(highp vec2 p, highp float seed)
 
 highp vec3 worldColor(highp vec2 uv, highp float t, highp float seed)
 {
-    uv.y -= .7;
+    uv.y -= .9;
     uv.x += t / 600.;
 
     highp float y = map(uv, seed);
-    return y < -.045 ? vec3(0) : y < 0. ? vec3(0) : vec3(0,pow(y+1.,4.)-.7,0);
+    return y < -.045 ? vec3(0) : y < 0. ? vec3(0) : gnd(uv, 3.*y);
 }
 
 bool collision(highp vec2 pos, highp float t, highp float seed, out highp vec3 colInfo)
 {
-    pos.y -= .7;
+    pos.y -= .9;
     pos.x += t / 600.;
 
     highp float y = map(pos, seed);
@@ -112,8 +146,8 @@ void main()
     if (length(m-pos) < .05) {
         m -= pos;
         //highp vec3 col = collision(pos, g[0].w, seed, colInfo) ? vec3(1,0,0) : vec3(.714,.376,.706);
-        highp vec3 col = vec3(.714,.376,.706);
-        highp float x = max((6.*length(m-vec2(.04))) + .9,0.);
+        highp vec3 col = 1.-C;
+        highp float x = max((8.*length(m-vec2(.04))) + .9,0.);
         col *= 1./x/x;
         gl_FragColor = vec4(col,1);
     } else {
