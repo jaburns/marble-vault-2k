@@ -53,26 +53,50 @@ highp float map(highp vec2 p, highp float seed)
     return merge(merge(a,c),b);
 }
 
-highp vec3 drawmap(highp vec2 pos, highp float seed)
-{
-    highp float y = map(pos, seed);
-    return y < -.045 ? vec3(0) : y < 0. ? vec3(.2,0,0) : vec3(0,pow(y+1.,4.)-.7,0);
-}
-
 highp vec3 worldColor(highp vec2 uv, highp float t, highp float seed)
 {
     uv.y -= .7;
-    uv.x += t / 60.;
-    return drawmap(uv, seed);
+    uv.x += t / 600.;
+
+    highp float y = map(uv, seed);
+    return y < -.045 ? vec3(0) : y < 0. ? vec3(0) : vec3(0,pow(y+1.,4.)-.7,0);
+}
+
+bool collision(highp vec2 pos, highp float t, highp float seed, out highp vec3 colInfo)
+{
+    pos.y -= .7;
+    pos.x += t / 600.;
+
+    highp float y = map(pos, seed);
+
+    highp vec2 e = vec2(0.0001, 0);
+    highp vec2 n = normalize(vec2(
+        map(pos - e.xy, seed) - map(pos + e.xy, seed),
+        map(pos - e.yx, seed) - map(pos + e.yx, seed)));
+
+    colInfo = vec3(n, y);
+
+    return y >= -.045;
 }
 
 // ==============================================================
+
+highp vec2 reflect2(highp vec2 i, highp vec2 n, highp float mt, highp float mn)
+{
+    //return reflect(i, n);
+    highp vec2 t = vec2(n.y, -n.x);
+    highp float normComp = dot(i, n);
+    highp float tanComp = dot(i, t);
+    return normComp*n*mn + tanComp*t*mt;
+}
 
 void main()
 {
     highp vec2 coord = gl_FragCoord.xy;
     highp vec2 pos = vec2(readFloat(g[1].xy), readFloat(g[1].zw));
+    pos *= 3.;
     highp vec2 vel = vec2(readFloat(g[2].xy), readFloat(g[2].zw));
+    highp vec3 colInfo;
 
     bool left  = mod(g[0].z,      2.) > .9;
     bool right = mod(g[0].z / 2., 2.) > .9;
@@ -87,6 +111,7 @@ void main()
 
     if (length(m-pos) < .05) {
         m -= pos;
+        //highp vec3 col = collision(pos, g[0].w, seed, colInfo) ? vec3(1,0,0) : vec3(.714,.376,.706);
         highp vec3 col = vec3(.714,.376,.706);
         highp float x = max((6.*length(m-vec2(.04))) + .9,0.);
         col *= 1./x/x;
@@ -99,17 +124,28 @@ void main()
 
     if (coord.y < 1. && coord.x < 4.)
     {
-        if (left)  vel.x -= 0.1;
-        if (right) vel.x += 0.1;
-        if (up)    vel.y += 0.1;
-        if (down)  vel.y -= 0.1;
+        if (left)  vel.x -= 0.03;
+        if (right) vel.x += 0.03;
+        if (up)    vel.y += 0.03;
+        if (down)  vel.y -= 0.03;
 
-        pos += 0.01 * vel;
-        vel *= 0.95;
+        vel.y -= 0.01;
+        pos += 0.05 * vel;
+        //vel *= 0.98;
 
         gl_FragColor = vec4(writeFloat(seed/999.), 0, 0);
 
+        if (collision(pos, g[0].w, seed, colInfo)) {
+            if (dot(colInfo.xy, vel) < 0.) {
+                pos += colInfo.xy * (colInfo.z + 0.045);
+                vel = reflect2(vel, colInfo.xy, 1., -.5);
+                //vel = reflect(vel, colInfo.xy);
+                //pos = colInfo.xy * colInfo.z;
+            }
+        }
+
         if (coord.x < 2.) {
+            pos /= 3.;
             gl_FragColor = vec4(writeFloat(pos.x), writeFloat(pos.y)); // g[1]
         }
         else if (coord.x < 3.) {
