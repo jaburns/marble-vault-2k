@@ -67,9 +67,6 @@ highp float merge(highp float shape1, highp float shape2){
 
 highp float map(highp vec2 p, highp float seed)
 {
-    highp vec2 v = p;
-    v.x = mod(v.x+.5, 1.)-.5;
-    
     highp float ra = rand(vec2(seed+1.,floor(p.x+ .5)));
     highp float rb = rand(vec2(seed+1.,floor(p.x+1.5)));
     highp float rc = rand(vec2(seed+1.,floor(p.x- .5)));
@@ -78,7 +75,10 @@ highp float map(highp vec2 p, highp float seed)
     highp float ob = rand(vec2(seed+2.,floor(p.x+1.5)));
     highp float oc = rand(vec2(seed+2.,floor(p.x- .5)));    
     
-    //if (p.y + oa > 0.) return -1.;
+    if (p.y + oa > 0.) return -1.;
+
+    highp vec2 v = p;
+    v.x = mod(v.x+.5, 1.)-.5;
     
     highp float a = length(v+vec2( 0,oa)) - (.7 + .5*ra);
     highp float b = length(v+vec2(-1,ob)) - (.7 + .5*rb);
@@ -128,7 +128,7 @@ void main()
 {
     highp vec2 coord = gl_FragCoord.xy;
     highp vec2 pos = vec2(readFloat(g[1].xy), readFloat(g[1].zw));
-    pos *= 3.;
+    pos *= 3.5;
     pos.x += (g[0].w-1.) / 40.;
 
     highp vec2 vel = vec2(readFloat(g[2].xy), readFloat(g[2].zw));
@@ -143,11 +143,13 @@ void main()
     bool stomped = mod(g[3].z,      2.) > .9;
     bool dashed  = mod(g[3].z / 2., 2.) > .9;
     bool grounded = mod(g[3].z / 4., 2.) > .9;
+    highp float counter = g[3].w;
 
 // Rendering
 
     highp vec2 m = (coord - g[0].xy * .5) / g[0].y;
-    m *= 3.;
+    highp vec2 mm = m;
+    m *= 3.5;
     m.x += g[0].w / 40.;
     m.y -= .9;
 
@@ -161,7 +163,12 @@ void main()
         gl_FragColor = vec4(col,1);
     } else {
         gl_FragColor = vec4(worldColor(m, g[0].w, seed), 1);
+        if (gl_FragColor.xyz == vec3(0)) {
+            gl_FragColor = vec4(.2*worldColor(2.*m - vec2(g[0].w / 30.,0), g[0].w, 2.*seed), 1);
+        }
     }
+
+    gl_FragColor.xyz *= 1.-smoothstep(16./10.*.5 - .05, 16./10.*.5 + .05, abs(mm.x));
 
 // State update
 
@@ -171,6 +178,8 @@ void main()
         pos += 0.05 * vel;
 
         if (collision(pos, g[0].w, seed, colInfo)) {
+            if (!grounded) {
+            }
             grounded = true;
 
             if (dot(colInfo.xy, vel) < 0.) {
@@ -178,9 +187,13 @@ void main()
                 vel = reflect2(vel, colInfo.xy, 1., 0.);
             }
         } else if (grounded) {
-            grounded = false;
-            stomped = false;
-            dashed = false;
+            counter++;
+            if (counter > 5.) {
+                grounded = false;
+                stomped = false;
+                dashed = false;
+                counter = 0.;
+            }
         }
         if (!stomped && down) {
             stomped = true;
@@ -188,13 +201,13 @@ void main()
         }
         if (!stomped && right) {
             stomped = true;
-            vel.x += .5;
+            vel.x += .5 - .5*vel.x;
         }
 
-        gl_FragColor = vec4(writeFloat(seed/999.), ((stomped?1.:0.)+(dashed?2.:0.)+(grounded?4.:0.))/255., 0);
+        gl_FragColor = vec4(writeFloat(seed/999.), ((stomped?1.:0.)+(dashed?2.:0.)+(grounded?4.:0.))/255., counter/255.);
         if (coord.x < 2.) {
             pos.x -= g[0].w / 40.;
-            pos /= 3.;
+            pos /= 3.5;
             gl_FragColor = vec4(writeFloat(pos.x), writeFloat(pos.y)); // g[1]
         }
         else if (coord.x < 3.) {
