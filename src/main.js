@@ -49,14 +49,17 @@ g.vertexAttribPointer(
 $stateBufferArray = [128,1,128,1,128,1,128,1,128,1,128,1,128,1,128,1],
 $stateBuffer = new Uint8Array(16),
 $ballPos = 0,
+$frames = 0,
 $cameraOffset = 0,
 $camFromBall = 0,
 $seed = 999*Math.random()|0,
 $bool = true,
 
 $keys = {}, // 37 = Left arrow, 38 = Up arrow, 39 = Right arrow, 40 = Down arrow
-document.onkeydown = $a => $keys[$a.keyCode] = 1;
-document.onkeyup   = $a => $keys[$a.keyCode] = 0;
+document.onkeydown = $a => $keys[$a.keyCode] = 1,
+document.onkeyup   = $a => $keys[$a.keyCode] = 0,
+
+$timeFormat = $b => ($b |= 0, $b > 9 ? $b : '0'+$b),
 
 setInterval($b => (
     g.readPixels(
@@ -84,6 +87,8 @@ setInterval($b => (
     $cameraOffset = $camFromBall + $ballPos,
     $stateBufferArray[3] = $cameraOffset,
 
-    s.innerText = '01:42:69'
+    $frames++,
+
+    s.innerText = `${$timeFormat($frames/3600)}:${$timeFormat($frames/60%60)}:${$timeFormat($frames/.6%100)}`
 //  ,console.log($stateBufferArray)
 ), 16)

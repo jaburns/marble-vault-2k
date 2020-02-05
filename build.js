@@ -7,7 +7,6 @@ const SRC_DIR = 'src';
 const FLAGS = {
     useRegPack: true,
     decompressRegPack: true,
-    usePrecisionHeader: false,
 };
 
 const shortVarNames = _.range(10, 36)
@@ -75,8 +74,8 @@ const getMinifiedShader = path => {
     shell.exec(`${SHADER_MIN_TOOL} --preserve-externals --no-renaming-list main --format none ${path} -o tmp_out.glsl`);
     const result = fs.readFileSync('tmp_out.glsl', 'utf8');
     
-    if (path.endsWith('.frag') && FLAGS.usePrecisionHeader) {
-        return 'precision highp float;' + result.replace(/highp /g, '');
+    if (path.endsWith('.frag')) {
+        return 'precision highp float;' + result;
     }
 
     return result;

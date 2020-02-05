@@ -1,6 +1,10 @@
-uniform highp mat4 g;
+uniform mat4 g;
 
-highp vec2 writeFloat(highp float a)
+float seed;
+
+// ==============================================================
+
+vec2 writeFloat(float a)
 {
     a = (a + 1.) / 2.;
     return vec2(
@@ -9,109 +13,78 @@ highp vec2 writeFloat(highp float a)
     );
 }
 
-highp float readFloat(highp vec2 a)
+float readFloat(vec2 a)
 {
     return (a.x/255. + a.y/255./255.) * 2. - 1.;
 }
 
 // ==============================================================
 
-const highp vec3 A = 1.-vec3(223.0 / 255.0, 61.0 / 255.0, 161.0 / 255.0);
-const highp vec3 AA = vec3(167.0 / 255.0, 79.0 / 255.0, 28.0 / 255.0);
+const vec3 i_GROUND_A = 1.-vec3(223.0 / 255.0, 61.0 / 255.0, 161.0 / 255.0);
+const vec3 i_GROUND_B = vec3(167.0 / 255.0, 79.0 / 255.0, 28.0 / 255.0);
+const vec3 i_SKY = vec3(119. / 255., 181. / 255., 254. / 255.);
 
-const highp vec3 i_SKY = vec3(119. / 255., 181. / 255., 254. / 255.);
-
-highp vec3 STRIPES(highp float i, highp vec3 base)
-{
-    return base*(1.-.05*abs(floor(mod(i,4.))-2.));
-//  i = mod(i, 4.0);
-//  return i < 1. ? base : i < 2. ? .95*base : i < 3. ? .9*base : .95*base;
-}
-highp vec3 stripes(highp vec2 xy, highp vec3 base)
+vec3 stripes(vec2 xy, vec3 base)
 {
     xy += .8*sin(.9*xy.yx);
-
-    highp vec2 uv = mod(xy, vec2(1.0));
-    highp float t = 8.0 * (uv.x + 2.0 - uv.y);
-    return STRIPES(t + 0.5, base);
+    return base*(1.-.05*abs(floor(mod(8.*(xy.x+2.-xy.y),4.))-2.));
 }
-highp vec3 gnd(highp vec2 xy, highp float d)
+
+vec3 gnd(vec2 xy, float d, vec3 base)
 {
     d = clamp(d, 0., 1.);
-    highp float one_minus_gnd = 1. - d;
-    highp float round_off = 1. - sqrt(1. - one_minus_gnd*one_minus_gnd);
-
-    highp vec3 a = 
-        stripes(xy + 0.2*vec2(-round_off,round_off), A) * (1.-.5*pow(clamp(d+.5,.5,1.),2.));
-
-    highp vec3 aa = 
-        stripes(xy + 0.2*vec2(-round_off,round_off), AA) * (1.-.5*pow(clamp(d+.5,.5,1.),2.));
-
-        return aa;
-    return mix(a, aa, smoothstep(.5,.6,d));
+    float b = 1. - d;
+    float r = 1. - sqrt(1. - b*b);
+    return stripes(xy + .2*vec2(-r,r), base) * (1.-.5*pow(clamp(d+.5,.5,1.),2.));
 }
 
+// ==============================================================
 
-
-
-
-highp float rand(highp vec2 co)
+float rand(vec2 co)
 {
-    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+    return fract(sin(dot(co,vec2(12.9898,78.233))) * 43758.5453);
 }
 
-highp float merge(highp float shape1, highp float shape2){
-    //return min(shape1, shape2);
-    highp vec2 intersectionSpace = vec2(shape1, shape2);
-    intersectionSpace = min(intersectionSpace, 0.);
-    highp float xx =  length(intersectionSpace);
-    highp float simpleUnion = min(shape1, shape2);
-    highp float outsideDistance = max(simpleUnion, 0.);
-    return -xx + outsideDistance;
-}
-
-highp float map(highp vec2 p, highp float seed)
+float merge(float a, float b)
 {
-    highp float ra = rand(vec2(seed+1.,floor(p.x+ .5)));
-    highp float rb = rand(vec2(seed+1.,floor(p.x+1.5)));
-    highp float rc = rand(vec2(seed+1.,floor(p.x- .5)));
-    
-    highp float oa = rand(vec2(seed+2.,floor(p.x+ .5)));
-    highp float ob = rand(vec2(seed+2.,floor(p.x+1.5)));
-    highp float oc = rand(vec2(seed+2.,floor(p.x- .5)));    
+    return -length(min(vec2(a, b), 0.)) + max(min(a, b), 0.);
+}
+
+float map(vec2 p)
+{
+    float ra = rand(vec2(seed+1.,floor(p.x+ .5)));
+    float rb = rand(vec2(seed+1.,floor(p.x+1.5)));
+    float rc = rand(vec2(seed+1.,floor(p.x- .5)));
+    float oa = rand(vec2(seed+1.,floor(p.x+ .5+9.)));
+    float ob = rand(vec2(seed+1.,floor(p.x+1.5+9.)));
+    float oc = rand(vec2(seed+1.,floor(p.x- .5+9.)));    
     
     if (p.y + oa > 0.) return -1.;
 
-    highp vec2 v = p;
+    vec2 v = p;
     v.x = mod(v.x+.5, 1.)-.5;
     
-    highp float a = length(v+vec2( 0,oa)) - (.7 + .5*ra);
-    highp float b = length(v+vec2(-1,ob)) - (.7 + .5*rb);
-    highp float c = length(v+vec2( 1,oc)) - (.7 + .5*rc);
+    float a = length(v+vec2( 0,oa)) - (.7 + .5*ra);
+    float b = length(v+vec2(-1,ob)) - (.7 + .5*rb);
+    float c = length(v+vec2( 1,oc)) - (.7 + .5*rc);
     
     return min(p.x-.5*p.y-2.5, merge(merge(a,c),b));
 }
 
-highp vec3 worldColor(highp vec2 uv, highp float t, highp float seed)
+vec3 worldColor(vec2 uv, float t, vec3 base)
 {
-//  uv.y -= .9;
-//  uv.x += t / 600.;
-
-    highp float y = map(uv, seed);
-    return y < -.045 ? vec3(0) : y < 0. ? vec3(0) : gnd(uv, 3.*y);
+    float y = map(uv);
+    return y < -.045 ? vec3(0) : y < 0. ? vec3(0) : gnd(uv, 3.*y, base);
 }
 
-bool collision(highp vec2 pos, highp float t, highp float seed, out highp vec3 colInfo)
+bool collision(vec2 pos, float t, out vec3 colInfo)
 {
-//  pos.y -= .9;
-//  pos.x += t / 600.;
+    float y = map(pos);
 
-    highp float y = map(pos, seed);
-
-    highp vec2 e = vec2(0.0001, 0);
-    highp vec2 n = normalize(vec2(
-        map(pos - e.xy, seed) - map(pos + e.xy, seed),
-        map(pos - e.yx, seed) - map(pos + e.yx, seed)));
+    vec2 e = vec2(0.0001, 0);
+    vec2 n = normalize(vec2(
+        map(pos - e.xy) - map(pos + e.xy),
+        map(pos - e.yx) - map(pos + e.yx)));
 
     colInfo = vec3(n, y);
 
@@ -120,65 +93,75 @@ bool collision(highp vec2 pos, highp float t, highp float seed, out highp vec3 c
 
 // ==============================================================
 
-highp vec2 reflect2(highp vec2 i, highp vec2 n, highp float mt, highp float mn)
+vec2 reflect2(vec2 i, vec2 n, float mt, float mn)
 {
     //return reflect(i, n);
-    highp vec2 t = vec2(n.y, -n.x);
-    highp float normComp = dot(i, n);
-    highp float tanComp = dot(i, t);
+    vec2 t = vec2(n.y, -n.x);
+    float normComp = dot(i, n);
+    float tanComp = dot(i, t);
     return normComp*n*mn + tanComp*t*mt;
 }
 
-void main()
+vec3 draw(vec2 coord, vec2 pos, bool stomped)
 {
-    highp vec2 coord = gl_FragCoord.xy;
-    highp vec2 pos = vec2(readFloat(g[1].xy), readFloat(g[1].zw));
-    pos.x += g[3].x;
-    pos *= 3.5;
-
-    highp vec2 vel = vec2(readFloat(g[2].xy), readFloat(g[2].zw));
-    highp vec3 colInfo;
-
-    bool left  = mod(g[0].z,      2.) > .9;
-    bool right = mod(g[0].z / 2., 2.) > .9;
-    bool up    = mod(g[0].z / 4., 2.) > .9;
-    bool down  = mod(g[0].z / 8., 2.) > .9;
-    highp float seed = floor(g[0].z / 16.);
-
-    bool stomped = mod(g[3].z,      2.) > .9;
-    bool dashed  = mod(g[3].z / 2., 2.) > .9;
-    bool grounded = mod(g[3].z / 4., 2.) > .9;
-    highp float counter = g[3].w;
-
-// Rendering
-
-    highp vec2 m = (coord - g[0].xy * .5) / g[0].y;
-    highp vec2 mm = m;
+    vec2 m = (coord - g[0].xy * .5) / g[0].y;
     m.x += g[0].w;
     m *= 3.5;
     m.y -= .9;
 
     if (length(m-pos) < .05) {
         m -= pos;
-        //highp vec3 col = collision(pos, g[0].w, seed, colInfo) ? vec3(1,0,0) : vec3(.714,.376,.706);
-        //highp vec3 col = vec3(stomped ? 1. : .5, dashed ? 1. : .5, grounded ? 1. : .5); //  1.-C;
-        highp vec3 col = stomped ? vec3(0,1,0) : 1.-A;
-        highp float x = max((8.*length(m-vec2(.04))) + .9,0.);
+        vec3 col = stomped ? vec3(1,0,0) : 1.-i_GROUND_A;
+        float x = max((8.*length(m-vec2(.04))) + .9,0.);
         col *= 1./x/x;
-        gl_FragColor = vec4(col,1);
+        return col;
     } else {
-        gl_FragColor = vec4(worldColor(m, g[0].w, seed), 1);
-        if (gl_FragColor.xyz == vec3(0)) {
-            gl_FragColor = vec4(worldColor(2.*m - 3.*vec2(g[0].w-9.,0), g[0].w, 2.*seed), 1);
-            if (gl_FragColor.xyz == vec3(0)) {
-                gl_FragColor = vec4(i_SKY,1);
+        vec3 fc = worldColor(m, g[0].w, i_GROUND_A);
+        if (fc == vec3(0)) {
+            fc = worldColor(2.*m - 3.*vec2(g[0].w-99.,-.1), g[0].w, i_GROUND_B);
+            if (fc == vec3(0)) {
+                fc = worldColor(4.*m - 8.*vec2(g[0].w-99.,0), g[0].w, i_GROUND_B);
+                if (fc == vec3(0)) {
+                    fc = i_SKY;
+                } else {
+                    fc = mix(fc, i_SKY, .6);
+                }
             } else {
-                gl_FragColor.xyz = mix(gl_FragColor.xyz, i_SKY, .6);
+                fc = mix(fc, i_SKY, .3);
             }
         }
+        return fc;
     }
+}
 
-    gl_FragColor.xyz = mix(gl_FragColor.xyz, i_SKY, smoothstep(16./10.*.5 - .01, 16./10.*.5 + .01, abs(mm.x)));
+void main()
+{
+    vec2 coord = gl_FragCoord.xy;
+    vec2 pos = vec2(readFloat(g[1].xy), readFloat(g[1].zw));
+    pos.x += g[3].x;
+    pos *= 3.5;
+
+    vec2 vel = vec2(readFloat(g[2].xy), readFloat(g[2].zw));
+    vec3 colInfo;
+
+    bool left  = mod(g[0].z,      2.) > .9;
+    bool right = mod(g[0].z / 2., 2.) > .9;
+    bool up    = mod(g[0].z / 4., 2.) > .9;
+    bool down  = mod(g[0].z / 8., 2.) > .9;
+    seed = floor(g[0].z / 16.);
+
+    bool stomped = mod(g[3].z,      2.) > .9;
+    bool dashed  = mod(g[3].z / 2., 2.) > .9;
+    bool grounded = mod(g[3].z / 4., 2.) > .9;
+    float counter = g[3].w;
+
+// Rendering
+
+    vec3 za = draw(coord+.5*vec2(-.75, .25),pos,stomped);
+    vec3 zb = draw(coord+.5*vec2(-.25,-.75),pos,stomped);
+    vec3 zc = draw(coord+.5*vec2( .25, .75),pos,stomped);
+    vec3 zd = draw(coord+.5*vec2( .75,-.25),pos,stomped);
+    gl_FragColor = vec4(.25*(za+zb+zc+zd), 1);
 
 // State update
 
@@ -187,7 +170,7 @@ void main()
         vel.y -= 0.01;
         pos += 0.05 * vel;
 
-        if (collision(pos, g[0].w, seed, colInfo)) {
+        if (collision(pos, g[0].w, colInfo)) {
             if (!grounded) {
             }
             grounded = true;
@@ -215,7 +198,7 @@ void main()
             vel.x += .5 - .5*vel.x;
         }
 
-        gl_FragColor = vec4(writeFloat(seed/999.), ((stomped?1.:0.)+(dashed?2.:0.)+(grounded?4.:0.))/255., counter/255.);
+        gl_FragColor = vec4(0, 0, ((stomped?1.:0.)+(dashed?2.:0.)+(grounded?4.:0.))/255., counter/255.);
         if (coord.x < 2.) {
             pos /= 3.5;
             pos.x -= g[0].w;
