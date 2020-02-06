@@ -12,7 +12,7 @@ $b = g.createShader(g.FRAGMENT_SHADER),
 g.shaderSource($b, $a),
 g.compileShader($b),
 g.attachShader($shader, $b),
-console.log(g.getShaderInfoLog($b)),
+//console.log(g.getShaderInfoLog($b)),
 
 g.linkProgram($shader),
 
@@ -30,7 +30,7 @@ g.vertexAttribPointer(
 //
 //  0 : g[0].x : W  : canvas width
 //  1 : g[0].y : W  : canvas height
-//  2 : g[0].z : W  : key input flags
+//  2 : g[0].z : W  : key input flags & seed
 //  3 : g[0].w : W  : camera offset x
 //  4 : g[1].x : RW : upper pos.x (relative to camera)
 //  5 : g[1].y : RW : lower pos.x (relative to camera)
@@ -56,7 +56,7 @@ $init = $b => (
     $frames = 
     $cameraOffset = 
     $camFromBall = 0,
-    $seed = $b?$seed:prompt(s.innerText+'\nMap? (0-999)',$seed)|0, // *Math.random()|0,
+    $seed = $b?$seed:prompt(s.innerText+'\nTrack?',$seed)|0,
     $initCameraOffset = 1
 ),
 
@@ -84,7 +84,7 @@ setInterval($b => (
     $stateBufferArray = Array.from($stateBuffer),
     $stateBufferArray[0] = a.width = innerWidth,
     $stateBufferArray[1] = a.height = innerHeight,
-    $stateBufferArray[2] = $keys[37]|0 + 2*$keys[39]|0 + 4*$keys[38]|0 + 8*$keys[40]|0 + 16*$seed,
+    $stateBufferArray[2] = $keys[39]|0 + 2*$keys[40]|0 + 4*$seed,
     $stateBufferArray[12] = $cameraOffset,
 
     $ballVelX = ($stateBufferArray[8]/255 + $stateBufferArray[9]/255/255) * 2 - 1,
@@ -96,10 +96,10 @@ setInterval($b => (
     $stateBufferArray[3] = $cameraOffset,
 
     $stateBufferArray[15]==0?$stuck++:$stuck=0,
-    $stuck>180&&$init(1),
-    $ballPos>20&&$init(),
+    ($stuck>180||$keys[82])&&$init(1),
+    $ballPos>20&&($seed+=100,$init()),
 
     $frames++,
-    s.innerText = `${$timeFormat($frames/3600)}:${$timeFormat($frames/60%60)}:${$timeFormat($frames/.6%100)}`
+    s.innerText = `Track\t${$seed}\t${$timeFormat($frames/3600)}:${$timeFormat($frames/60%60)}:${$timeFormat($frames/.6%100)}`
 //  ,console.log($stateBufferArray)
 ), 16)

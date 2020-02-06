@@ -2,13 +2,13 @@ uniform mat4 g;
 
 float seed;
 vec2 pos;
-vec3 colInfo;
 
 // ==============================================================
 
 float rand(vec2 co)
 {
-    return fract(sin(dot(co,vec2(12.9898,78.233))) * 43758.5453);
+    return fract(sin(dot(co,vec2(11.,79.))) * 4e5);
+    //return fract(sin(dot(co,vec2(12.9898,78.233))) * 43758.5453);
 }
 
 // ==============================================================
@@ -67,12 +67,13 @@ float merge(float a, float b)
 
 float map(vec2 p)
 {
-    float ra = rand(vec2(seed+1.,floor(p.x+ .5)));
-    float rb = rand(vec2(seed+1.,floor(p.x+1.5)));
-    float rc = rand(vec2(seed+1.,floor(p.x- .5)));
-    float oa = rand(vec2(seed+1.,floor(p.x+ .5+9.)));
-    float ob = rand(vec2(seed+1.,floor(p.x+1.5+9.)));
-    float oc = rand(vec2(seed+1.,floor(p.x- .5+9.)));    
+    float ow = .9+seed/2000.;
+    float ra = rand(vec2(seed,floor(p.x+ .5)));
+    float rb = rand(vec2(seed,floor(p.x+1.5)));
+    float rc = rand(vec2(seed,floor(p.x- .5)));
+    float oa = ow*rand(vec2(seed,floor(p.x+ .5+9.)));
+    float ob = ow*rand(vec2(seed,floor(p.x+1.5+9.)));
+    float oc = ow*rand(vec2(seed,floor(p.x- .5+9.)));
     
     if (p.y + oa > 0.) return -1.;
 
@@ -92,37 +93,7 @@ vec3 worldColor(vec2 uv, vec3 base)
     return y < -.045 ? vec3(0) : y < 0. ? vec3(0) : gnd(uv, 3.*y, base);
 }
 
-bool collision()
-{
-    float y = map(pos);
-
-    vec2 e = vec2(1e-4, 0);
-    vec2 n = normalize(vec2(
-        map(pos - e.xy) - map(pos + e.xy),
-        map(pos - e.yx) - map(pos + e.yx)));
-
-    colInfo = vec3(n, y);
-
-    return y >= -.045;
-}
-
 // ==============================================================
-
-vec2 reflect2(vec2 i, vec2 n, float mt, float mn)
-{
-    vec2 t = vec2(n.y, -n.x);
-    float normComp = dot(i, n);
-    float tanComp = dot(i, t);
-    return normComp*n*mn + tanComp*t*mt;
-}
-
-void flag(vec2 p, inout vec3 fc)
-{
-    float ff = max(1.-pow(20.*(p.x-20.),2.),0.);
-    if (ff > 0.) {
-        fc = vec3(.01+floor(mod(20.*(p.x+p.y),2.)));
-    }
-}
 
 vec3 draw(vec2 coord)
 {
@@ -168,11 +139,9 @@ void main()
 
     vec2 vel = vec2(readFloat(g[2].xy), readFloat(g[2].zw));
 
-    bool left  = mod(g[0].z,      2.) > .9;
-    bool right = mod(g[0].z / 2., 2.) > .9;
-    bool up    = mod(g[0].z / 4., 2.) > .9;
-    bool down  = mod(g[0].z / 8., 2.) > .9;
-    seed = floor(g[0].z / 16.);
+    bool right = mod(g[0].z     , 2.) > .9;
+    bool down  = mod(g[0].z / 2., 2.) > .9;
+    seed = floor(g[0].z / 4.);
 
     bool stomped = mod(g[3].z,      2.) > .9;
     bool dashed  = mod(g[3].z / 2., 2.) > .9;
@@ -193,12 +162,19 @@ void main()
         vel.y -= 0.01;
         pos += 0.05 * vel;
 
-        if (collision()) {
+        float depth = map(pos);
+        vec2 eps = vec2(1e-4, 0);
+        vec2 norm = normalize(vec2(
+            map(pos - eps.xy) - map(pos + eps.xy),
+            map(pos - eps.yx) - map(pos + eps.yx)));
+
+        if (depth >= -.045) {
             counter = 0;
 
-            if (dot(colInfo.xy, vel) < 0.) {
-                pos += colInfo.xy * (colInfo.z + 0.045);
-                vel = reflect2(vel, colInfo.xy, 1., 0.);
+            if (dot(norm, vel) < 0.) {
+                pos += norm * (depth + 0.045);
+                vec2 tang = vec2(norm.y, -norm.x);
+                vel = dot(vel, tang) * tang;
             }
         } else {
             counter++;
@@ -217,7 +193,7 @@ void main()
             }
         }
 
-        gl_FragColor = vec4(0, 0, ((stomped?1.:0.)+(dashed?2.:0.))/255., float(counter)/255.);
+        gl_FragColor = vec4(0, 0, ((stomped?1.:0.)+(dashed?2.:0.))/255., float(counter)/255.); // g[3]
         if (coord.x < 2.) {
             pos /= 3.5;
             pos.x -= g[0].w;
