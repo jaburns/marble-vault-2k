@@ -39,7 +39,7 @@ vec3 stripes(vec2 xy, vec3 base)
         return vec3(.2+.8*mod(xy.x + xy.y, 2.));
     }
 
-    vec3 add = checkerFlag > 0 ? vec3(0,0,.5)*smoothstep(.0, .1, sin(.1*xy.x+seed)) : vec3(0);
+    vec3 add = checkerFlag > 0 ? vec3(0,0,.5)*smoothstep(.0, .1, cos(.1*xy.x+seed)) : vec3(0);
 
     xy += .8*sin(.9*xy.yx);
     vec3 ret = base*(1.-.05*abs(floor(mod(8.*(xy.x+2.-xy.y),4.))-2.));
@@ -176,15 +176,14 @@ void main()
 
     bool stomped = mod(g[3].z,      2.) > .9;
     bool dashed  = mod(g[3].z / 2., 2.) > .9;
-    bool grounded = mod(g[3].z / 4., 2.) > .9;
-    float counter = g[3].w;
+    int counter = int(g[3].w);
 
 // Rendering
 
-    vec3 za = draw(coord+.5*vec2(-.75, .25),pos,stomped);
-    vec3 zb = draw(coord+.5*vec2(-.25,-.75),pos,stomped);
-    vec3 zc = draw(coord+.5*vec2( .25, .75),pos,stomped);
-    vec3 zd = draw(coord+.5*vec2( .75,-.25),pos,stomped);
+    vec3 za = draw(coord+.5*vec2(-.75, .25),pos,counter<6);
+    vec3 zb = draw(coord+.5*vec2(-.25,-.75),pos,counter<6);
+    vec3 zc = draw(coord+.5*vec2( .25, .75),pos,counter<6);
+    vec3 zd = draw(coord+.5*vec2( .75,-.25),pos,counter<6);
     gl_FragColor = vec4(.25*(za+zb+zc+zd), 1);
 
 // State update
@@ -195,34 +194,30 @@ void main()
         pos += 0.05 * vel;
 
         if (collision(pos, g[0].w, colInfo)) {
-            if (!grounded) {
-            }
-            grounded = true;
+            counter = 0;
 
             if (dot(colInfo.xy, vel) < 0.) {
                 pos += colInfo.xy * (colInfo.z + 0.045);
                 vel = reflect2(vel, colInfo.xy, 1., 0.);
             }
-        } else if (grounded) {
+        } else {
             counter++;
-            if (counter > 5.) {
-                grounded = false;
+            if (counter == 6) {
                 stomped = false;
                 dashed = false;
-                counter = 0.;
+            }
+            if (!stomped && down) {
+                stomped = true;
+                dashed = true;
+                vel.y = -1.;
+            }
+            if (!dashed && right) {
+                dashed = true;
+                vel.x += .5 - .5*vel.x;
             }
         }
-        if (!stomped && down) {
-            stomped = true;
-            dashed = true;
-            vel.y = -1.;
-        }
-        if (!dashed && right) {
-            dashed = true;
-            vel.x += .5 - .5*vel.x;
-        }
 
-        gl_FragColor = vec4(0, 0, ((stomped?1.:0.)+(dashed?2.:0.)+(grounded?4.:0.))/255., counter/255.);
+        gl_FragColor = vec4(0, 0, ((stomped?1.:0.)+(dashed?2.:0.))/255., float(counter)/255.);
         if (coord.x < 2.) {
             pos /= 3.5;
             pos.x -= g[0].w;
