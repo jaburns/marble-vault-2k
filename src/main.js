@@ -56,7 +56,7 @@ $init = $b => (
     $frames = 
     $cameraOffset = 
     $camFromBall = 0,
-    $seed = $b?$seed:prompt(s.innerText+'\nTrack?',$seed)|0,
+    $seed = $b?$seed:prompt(s.innerText+'\nTrack?',$seed+1)|0,
     $initCameraOffset = 1
 ),
 
@@ -97,9 +97,9 @@ setInterval($b => (
 
     $stateBufferArray[15]==0?$stuck++:$stuck=0,
     ($stuck>180||$keys[82])&&$init(1),
-    $ballPos>20&&($seed+=100,$init()),
+    $ballPos>20&&$init(),
 
     $frames++,
-    s.innerText = `Track\t${$seed}\t${$timeFormat($frames/3600)}:${$timeFormat($frames/60%60)}:${$timeFormat($frames/.6%100)}`
+    s.innerText = `Track\t${$seed}\t>\t${$timeFormat($frames/3600)}:${$timeFormat($frames/60%60)}:${$timeFormat($frames/.6%100)}`
 //  ,console.log($stateBufferArray)
 ), 16)

@@ -96,6 +96,7 @@ const removeWhitespace = js => js
     .replace(/return/g, 'return ')
     .replace(/let/g, 'let ')
     .replace(/newInt/g, 'new Int')
+    .replace(/\\t/g, ' ')
     .replace(/newUint/g, 'new Uint');
 
 const addNewlines = (str, lineLength) => {

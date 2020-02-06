@@ -67,22 +67,22 @@ float merge(float a, float b)
 
 float map(vec2 p)
 {
-    float ow = .9+seed/2000.;
+    float weird = abs(seed/1e3);
     float ra = rand(vec2(seed,floor(p.x+ .5)));
     float rb = rand(vec2(seed,floor(p.x+1.5)));
     float rc = rand(vec2(seed,floor(p.x- .5)));
-    float oa = ow*rand(vec2(seed,floor(p.x+ .5+9.)));
-    float ob = ow*rand(vec2(seed,floor(p.x+1.5+9.)));
-    float oc = ow*rand(vec2(seed,floor(p.x- .5+9.)));
+    float oa = rand(vec2(seed,floor(p.x+ .5+9.)))*(.9+weird);
+    float ob = rand(vec2(seed,floor(p.x+1.5+9.)))*(.9+weird);
+    float oc = rand(vec2(seed,floor(p.x- .5+9.)))*(.9+weird);
     
-    if (p.y + oa > 0.) return -1.;
+    if (seed > 0. && p.y + oa > 0.) return -1.;
 
     vec2 v = p;
     v.x = mod(v.x+.5, 1.)-.5;
     
-    float a = length(v+vec2( 0,oa)) - (.7 + .5*ra);
-    float b = length(v+vec2(-1,ob)) - (.7 + .5*rb);
-    float c = length(v+vec2( 1,oc)) - (.7 + .5*rc);
+    float a = length(v+vec2( 0,oa-.5*weird)) - (.7 + .6*ra);
+    float b = length(v+vec2(-1,ob-.5*weird)) - (.7 + .6*rb);
+    float c = length(v+vec2( 1,oc-.5*weird)) - (.7 + .6*rc);
     
     return min(p.x-.7*p.y-7., merge(merge(a,c),b));
 }
