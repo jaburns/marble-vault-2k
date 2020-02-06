@@ -4,6 +4,13 @@ float seed;
 
 // ==============================================================
 
+float rand(vec2 co)
+{
+    return fract(sin(dot(co,vec2(12.9898,78.233))) * 43758.5453);
+}
+
+// ==============================================================
+
 vec2 writeFloat(float a)
 {
     a = (a + 1.) / 2.;
@@ -24,10 +31,19 @@ const vec3 i_GROUND_A = vec3(.13,.76,.37);
 const vec3 i_GROUND_B = vec3(.65,.31,.11);
 const vec3 i_SKY = vec3(.47,.71,1.);
 
+int checkerFlag;
 vec3 stripes(vec2 xy, vec3 base)
 {
+    if (checkerFlag>0 && xy.x > 19.8*3.5 && xy.x < 20.*3.5) {
+        xy = floor(10.*xy);
+        return vec3(.2+.8*mod(xy.x + xy.y, 2.));
+    }
+
+    vec3 add = checkerFlag > 0 ? vec3(0,0,.5)*smoothstep(.0, .1, sin(.1*xy.x+seed)) : vec3(0);
+
     xy += .8*sin(.9*xy.yx);
-    return base*(1.-.05*abs(floor(mod(8.*(xy.x+2.-xy.y),4.))-2.));
+    vec3 ret = base*(1.-.05*abs(floor(mod(8.*(xy.x+2.-xy.y),4.))-2.));
+    return ret + add;
 }
 
 vec3 gnd(vec2 xy, float d, vec3 base)
@@ -35,15 +51,12 @@ vec3 gnd(vec2 xy, float d, vec3 base)
     d = clamp(d, 0., 1.);
     float b = 1. - d;
     float r = 1. - sqrt(1. - b*b);
-    return stripes(xy + .2*vec2(-r,r), base) * (1.-.5*pow(clamp(d+.5,.5,1.),2.));
+
+    return stripes(xy + .2*vec2(-r,r), base)
+        * (1.-.5*pow(clamp(d+.5,.5,1.),2.));
 }
 
 // ==============================================================
-
-float rand(vec2 co)
-{
-    return fract(sin(dot(co,vec2(12.9898,78.233))) * 43758.5453);
-}
 
 float merge(float a, float b)
 {
@@ -124,10 +137,11 @@ vec3 draw(vec2 coord, vec2 pos, bool stomped)
         float x = max((8.*length(m-vec2(.04))) + .9,0.);
         fc *= 1./x/x;
     } else {
+        checkerFlag = 1;
         fc = worldColor(m, g[0].w, i_GROUND_A);
+        checkerFlag = 0;
         if (fc == vec3(0)) {
             fc = worldColor(2.*m - 3.*vec2(g[0].w-99.,-.1), g[0].w, i_GROUND_B);
-            flag(m/3.5, fc);
             if (fc == vec3(0)) {
                 fc = worldColor(4.*m - 8.*vec2(g[0].w-99.,0), g[0].w, i_GROUND_B);
                 if (fc == vec3(0)) {
