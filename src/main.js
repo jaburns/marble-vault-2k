@@ -40,7 +40,7 @@ g.vertexAttribPointer(
 //  9 : g[2].y : RW : lower vel.x
 // 10 : g[2].z : RW : upper vel.y
 // 11 : g[2].w : RW : lower vel.y
-// 12 : g[3].x : W  : previous camera offset x
+// 12 : g[3].x : W  : previous camera offset x, R : reset
 // 13 : g[3].y : unused
 // 14 : g[3].z : RW : jump state flags
 // 15 : g[3].w : RW : jump grace counter
@@ -48,14 +48,15 @@ g.vertexAttribPointer(
 
 $seed = 0,
 
-$init = () => (
-    $stateBufferArray = [128,1,128,1,128,1,128,1,255,1,192,1,128,1,128,1],
+$init = $b => (
+    $stateBufferArray = [128,1,128,1,128,1,128,1,255,1,192,1,128,1,128,0],
     $stateBuffer = new Uint8Array(16),
+    $stuck =
     $ballPos = 
     $frames = 
     $cameraOffset = 
     $camFromBall = 0,
-    $seed = prompt(s.innerText+'\nMap? (0-999)',$seed)|0, // *Math.random()|0,
+    $seed = $b?$seed:prompt(s.innerText+'\nMap? (0-999)',$seed)|0, // *Math.random()|0,
     $initCameraOffset = 1
 ),
 
@@ -94,10 +95,11 @@ setInterval($b => (
     $cameraOffset = $camFromBall + $ballPos,
     $stateBufferArray[3] = $cameraOffset,
 
-    $stateBufferArray[13] = $frames++,
-
+    $stateBufferArray[15]==0?$stuck++:$stuck=0,
+    $stuck>180&&$init(1),
     $ballPos>20&&$init(),
 
+    $frames++,
     s.innerText = `${$timeFormat($frames/3600)}:${$timeFormat($frames/60%60)}:${$timeFormat($frames/.6%100)}`
 //  ,console.log($stateBufferArray)
 ), 16)

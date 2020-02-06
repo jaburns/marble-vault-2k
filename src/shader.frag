@@ -1,6 +1,8 @@
 uniform mat4 g;
 
 float seed;
+vec2 pos;
+vec3 colInfo;
 
 // ==============================================================
 
@@ -84,13 +86,13 @@ float map(vec2 p)
     return min(p.x-.7*p.y-7., merge(merge(a,c),b));
 }
 
-vec3 worldColor(vec2 uv, float t, vec3 base)
+vec3 worldColor(vec2 uv, vec3 base)
 {
     float y = map(uv);
     return y < -.045 ? vec3(0) : y < 0. ? vec3(0) : gnd(uv, 3.*y, base);
 }
 
-bool collision(vec2 pos, float t, out vec3 colInfo)
+bool collision()
 {
     float y = map(pos);
 
@@ -108,22 +110,21 @@ bool collision(vec2 pos, float t, out vec3 colInfo)
 
 vec2 reflect2(vec2 i, vec2 n, float mt, float mn)
 {
-    //return reflect(i, n);
     vec2 t = vec2(n.y, -n.x);
     float normComp = dot(i, n);
     float tanComp = dot(i, t);
     return normComp*n*mn + tanComp*t*mt;
 }
 
-void flag(vec2 pos, inout vec3 fc)
+void flag(vec2 p, inout vec3 fc)
 {
-    float ff = max(1.-pow(20.*(pos.x-20.),2.),0.);
+    float ff = max(1.-pow(20.*(p.x-20.),2.),0.);
     if (ff > 0.) {
-        fc = vec3(.01+floor(mod(20.*(pos.x+pos.y),2.)));
+        fc = vec3(.01+floor(mod(20.*(p.x+p.y),2.)));
     }
 }
 
-vec3 draw(vec2 coord, vec2 pos, bool stomped)
+vec3 draw(vec2 coord)
 {
     vec2 m = (coord - g[0].xy * .5) / g[0].y;
     m.x += g[0].w;
@@ -133,17 +134,17 @@ vec3 draw(vec2 coord, vec2 pos, bool stomped)
     vec3 fc;
     if (length(m-pos) < .05) {
         m -= pos;
-        fc = stomped ? vec3(1,0,0) : 1.-i_GROUND_A;
+        fc = 1.-i_GROUND_A;
         float x = max((8.*length(m-vec2(.04))) + .9,0.);
         fc *= 1./x/x;
     } else {
         checkerFlag = 1;
-        fc = worldColor(m, g[0].w, i_GROUND_A);
+        fc = worldColor(m, i_GROUND_A);
         checkerFlag = 0;
         if (fc == vec3(0)) {
-            fc = worldColor(2.*m - 3.*vec2(g[0].w-99.,-.1), g[0].w, i_GROUND_B);
+            fc = worldColor(2.*m - 3.*vec2(g[0].w-99.,-.1), i_GROUND_B);
             if (fc == vec3(0)) {
-                fc = worldColor(4.*m - 8.*vec2(g[0].w-99.,0), g[0].w, i_GROUND_B);
+                fc = worldColor(4.*m - 8.*vec2(g[0].w-99.,0), i_GROUND_B);
                 if (fc == vec3(0)) {
                     fc = i_SKY;
                 } else {
@@ -161,12 +162,11 @@ vec3 draw(vec2 coord, vec2 pos, bool stomped)
 void main()
 {
     vec2 coord = gl_FragCoord.xy;
-    vec2 pos = vec2(readFloat(g[1].xy), readFloat(g[1].zw));
+    pos = vec2(readFloat(g[1].xy), readFloat(g[1].zw));
     pos.x += g[3].x;
     pos *= 3.5;
 
     vec2 vel = vec2(readFloat(g[2].xy), readFloat(g[2].zw));
-    vec3 colInfo;
 
     bool left  = mod(g[0].z,      2.) > .9;
     bool right = mod(g[0].z / 2., 2.) > .9;
@@ -180,10 +180,10 @@ void main()
 
 // Rendering
 
-    vec3 za = draw(coord+.5*vec2(-.75, .25),pos,counter<6);
-    vec3 zb = draw(coord+.5*vec2(-.25,-.75),pos,counter<6);
-    vec3 zc = draw(coord+.5*vec2( .25, .75),pos,counter<6);
-    vec3 zd = draw(coord+.5*vec2( .75,-.25),pos,counter<6);
+    vec3 za = draw(coord+.5*vec2(-.75, .25));
+    vec3 zb = draw(coord+.5*vec2(-.25,-.75));
+    vec3 zc = draw(coord+.5*vec2( .25, .75));
+    vec3 zd = draw(coord+.5*vec2( .75,-.25));
     gl_FragColor = vec4(.25*(za+zb+zc+zd), 1);
 
 // State update
@@ -193,7 +193,7 @@ void main()
         vel.y -= 0.01;
         pos += 0.05 * vel;
 
-        if (collision(pos, g[0].w, colInfo)) {
+        if (collision()) {
             counter = 0;
 
             if (dot(colInfo.xy, vel) < 0.) {
