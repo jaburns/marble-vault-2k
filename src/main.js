@@ -46,14 +46,20 @@ g.vertexAttribPointer(
 // 15 : g[3].w : RW : jump grace counter
 //
 
-$stateBufferArray = [128,1,128,1,128,1,128,1,128,1,128,1,128,1,128,1],
-$stateBuffer = new Uint8Array(16),
-$ballPos = 0,
-$frames = 0,
-$cameraOffset = 0,
-$camFromBall = 0,
-$seed = 999*Math.random()|0,
-$bool = true,
+$seed = 0,
+
+$init = () => (
+    $stateBufferArray = [128,1,128,1,128,1,128,1,255,1,192,1,128,1,128,1],
+    $stateBuffer = new Uint8Array(16),
+    $ballPos = 
+    $frames = 
+    $cameraOffset = 
+    $camFromBall = 0,
+    $seed = prompt(s.innerText+'\nMap? (0-999)',$seed)|0, // *Math.random()|0,
+    $initCameraOffset = 1
+),
+
+$init(),
 
 $keys = {}, // 37 = Left arrow, 38 = Up arrow, 39 = Right arrow, 40 = Down arrow
 document.onkeydown = $a => $keys[$a.keyCode] = 1,
@@ -81,13 +87,16 @@ setInterval($b => (
     $stateBufferArray[12] = $cameraOffset,
 
     $ballVelX = ($stateBufferArray[8]/255 + $stateBufferArray[9]/255/255) * 2 - 1,
-    $ballPos += $ballVelX * 0.05 / 3.5 + ($bool ? 1 : 0), $bool = false,
+    $ballPos += $ballVelX * .05 / 3.5 + $initCameraOffset,
+    $initCameraOffset = 0,
 
-    $camFromBall += (.3*$ballVelX - $camFromBall) / 100,
+    $camFromBall += (.3*$ballVelX - $camFromBall) / 99,
     $cameraOffset = $camFromBall + $ballPos,
     $stateBufferArray[3] = $cameraOffset,
 
-    $frames++,
+    $stateBufferArray[13] = $frames++,
+
+    $ballPos>20&&$init(),
 
     s.innerText = `${$timeFormat($frames/3600)}:${$timeFormat($frames/60%60)}:${$timeFormat($frames/.6%100)}`
 //  ,console.log($stateBufferArray)

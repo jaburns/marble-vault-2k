@@ -20,9 +20,9 @@ float readFloat(vec2 a)
 
 // ==============================================================
 
-const vec3 i_GROUND_A = 1.-vec3(223.0 / 255.0, 61.0 / 255.0, 161.0 / 255.0);
-const vec3 i_GROUND_B = vec3(167.0 / 255.0, 79.0 / 255.0, 28.0 / 255.0);
-const vec3 i_SKY = vec3(119. / 255., 181. / 255., 254. / 255.);
+const vec3 i_GROUND_A = vec3(.13,.76,.37);
+const vec3 i_GROUND_B = vec3(.65,.31,.11);
+const vec3 i_SKY = vec3(.47,.71,1.);
 
 vec3 stripes(vec2 xy, vec3 base)
 {
@@ -68,7 +68,7 @@ float map(vec2 p)
     float b = length(v+vec2(-1,ob)) - (.7 + .5*rb);
     float c = length(v+vec2( 1,oc)) - (.7 + .5*rc);
     
-    return min(p.x-.5*p.y-2.5, merge(merge(a,c),b));
+    return min(p.x-.7*p.y-7., merge(merge(a,c),b));
 }
 
 vec3 worldColor(vec2 uv, float t, vec3 base)
@@ -81,7 +81,7 @@ bool collision(vec2 pos, float t, out vec3 colInfo)
 {
     float y = map(pos);
 
-    vec2 e = vec2(0.0001, 0);
+    vec2 e = vec2(1e-4, 0);
     vec2 n = normalize(vec2(
         map(pos - e.xy) - map(pos + e.xy),
         map(pos - e.yx) - map(pos + e.yx)));
@@ -102,6 +102,14 @@ vec2 reflect2(vec2 i, vec2 n, float mt, float mn)
     return normComp*n*mn + tanComp*t*mt;
 }
 
+void flag(vec2 pos, inout vec3 fc)
+{
+    float ff = max(1.-pow(20.*(pos.x-20.),2.),0.);
+    if (ff > 0.) {
+        fc = vec3(.01+floor(mod(20.*(pos.x+pos.y),2.)));
+    }
+}
+
 vec3 draw(vec2 coord, vec2 pos, bool stomped)
 {
     vec2 m = (coord - g[0].xy * .5) / g[0].y;
@@ -109,16 +117,17 @@ vec3 draw(vec2 coord, vec2 pos, bool stomped)
     m *= 3.5;
     m.y -= .9;
 
+    vec3 fc;
     if (length(m-pos) < .05) {
         m -= pos;
-        vec3 col = stomped ? vec3(1,0,0) : 1.-i_GROUND_A;
+        fc = stomped ? vec3(1,0,0) : 1.-i_GROUND_A;
         float x = max((8.*length(m-vec2(.04))) + .9,0.);
-        col *= 1./x/x;
-        return col;
+        fc *= 1./x/x;
     } else {
-        vec3 fc = worldColor(m, g[0].w, i_GROUND_A);
+        fc = worldColor(m, g[0].w, i_GROUND_A);
         if (fc == vec3(0)) {
             fc = worldColor(2.*m - 3.*vec2(g[0].w-99.,-.1), g[0].w, i_GROUND_B);
+            flag(m/3.5, fc);
             if (fc == vec3(0)) {
                 fc = worldColor(4.*m - 8.*vec2(g[0].w-99.,0), g[0].w, i_GROUND_B);
                 if (fc == vec3(0)) {
@@ -130,8 +139,9 @@ vec3 draw(vec2 coord, vec2 pos, bool stomped)
                 fc = mix(fc, i_SKY, .3);
             }
         }
-        return fc;
     }
+
+    return fc;
 }
 
 void main()
