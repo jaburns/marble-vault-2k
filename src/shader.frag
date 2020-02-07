@@ -19,14 +19,14 @@ float readFloat(vec2 a)
     return (a.x/255. + a.y/255./255.) * 2. - 1.;
 }
 
-// 
+// ====================================================================================================================
 
-
-    const vec3 WHITE  = vec3(1);
-    const vec3 BLUE   = vec3(113.,175.,255.)/255.;
-    const vec3 YELLOW = vec3(254.,219.,99.)/255.;
-    const vec3 PINK   = vec3(229.,106.,111.)/255.;
-    const vec3 PURPLE = vec3(34.,42.,79.)/255.;
+float DUSKY;
+const vec3 WHITE  = vec3(1);
+const vec3 BLUE   = vec3(113.,175.,255.)/255.;
+const vec3 YELLOW = vec3(254.,219.,99.)/255.;
+const vec3 PINK   = vec3(229.,106.,111.)/255.;
+const vec3 PURPLE = vec3(34.,42.,79.)/255.;
 
 vec3 blend3(vec3 ca, vec3 cb, vec3 cc, float x)
 {
@@ -52,10 +52,10 @@ vec3 sky(vec2 m)
     float horz = 1.-2.*m.y;
     m *= 40.;
 
-    float r = length(m - vec2(15.));
+    float r = length(m - mix(vec2(15), vec2(-15,7.), DUSKY));
     
     //sunY = 2.*(sunY-.25);
-    float sunY = .0;
+    float sunY = .9*DUSKY;
     float sunCore = smoothstep(1., 1.2, r);
     float sunRing = 1.-exp(-.2*r);
     
@@ -132,7 +132,8 @@ vec3 draw(vec2 coord)
 
     if (length(m-pos) < .05) {
         m -= pos;
-        d = max((8.*length(m-vec2(.04))) + .9,0.);
+        vec2 ppp = mix(vec2(.04), vec2(-.04,.04), DUSKY);
+        d = max((8.*length(m-ppp)) + .9,0.);
         return colorFromHue(ga+.5)/d/d;
     } 
 
@@ -163,12 +164,14 @@ vec3 draw(vec2 coord)
             // Add some curvature to the stripes.
             uv += .8*sin(.9*uv.yx);
 
+            vec2 L = mix(vec2(1), vec2(-1,.5), DUSKY);
+
             // Get color of the stripes.
             vec3 stripes = colorFromHue(i == 0. ? ga : ga - .3)
                 * (1.-.05*abs(floor(mod(8.*(uv.x+2.-uv.y),4.))-2.))        // Stripe color
-                * (.5 + r * (.2 + max(0.,dot(normalize(vec2(1)), norm)))); // Lighting
+                * (.5 + r * (.2 + max(0.,dot(normalize(L), norm)))); // Lighting
 
-            return mix(stripes, BLUE, i*.3);
+            return mix(mix(stripes, BLUE, i*.3), PURPLE, .4*DUSKY);
         }
     }
 
@@ -186,6 +189,8 @@ void main()
     pos.x += g[3].x;
     pos *= 3.5;
     seed = floor(g[0].z / 4.);
+
+    DUSKY = .5-.5*cos(seed/2.);
 
     int right   = int(mod(g[0].z     , 2.));
     int down    = int(mod(g[0].z / 2., 2.));
