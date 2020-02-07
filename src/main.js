@@ -57,12 +57,12 @@ $init = $b => (
     $cameraOffset = 
     $camFromBall = 0,
     $seed = $b?$seed:prompt(s.innerText+'\nTrack?',$seed+1)|0,
-    $initCameraOffset = 1
+    $initCameraOffset = 1,
+    $keys = {}
 ),
 
 $init(),
 
-$keys = {}, // 37 = Left arrow, 38 = Up arrow, 39 = Right arrow, 40 = Down arrow
 document.onkeydown = $a => $keys[$a.keyCode] = 1,
 document.onkeyup   = $a => $keys[$a.keyCode] = 0,
 
@@ -84,7 +84,7 @@ setInterval($b => (
     $stateBufferArray = Array.from($stateBuffer),
     $stateBufferArray[0] = a.width = innerWidth,
     $stateBufferArray[1] = a.height = innerHeight,
-    $stateBufferArray[2] = $keys[39]|0 + 2*$keys[40]|0 + 4*$seed,
+    $stateBufferArray[2] = $keys[39]|0 + 2*$keys[40]|0 + 4*$seed, // 39 = Right arrow, 40 = Down arrow
     $stateBufferArray[12] = $cameraOffset,
 
     $ballVelX = ($stateBufferArray[8]/255 + $stateBufferArray[9]/255/255) * 2 - 1,
@@ -96,7 +96,7 @@ setInterval($b => (
     $stateBufferArray[3] = $cameraOffset,
 
     $stateBufferArray[15]==0?$stuck++:$stuck=0,
-    ($stuck>180||$keys[82])&&$init(1),
+    ($stuck>180||$keys[82])&&$init(1), // R key
     $ballPos>20&&$init(),
 
     $frames++,

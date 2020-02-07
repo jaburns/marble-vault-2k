@@ -8,6 +8,7 @@ vec2 pos;
 float rand(vec2 co)
 {
     return fract(sin(dot(co,vec2(11.,79.))) * 4e5);
+    //return fract(sin(n.x+99.*n.y)*43758.5453123);
     //return fract(sin(dot(co,vec2(12.9898,78.233))) * 43758.5453);
 }
 
@@ -29,10 +30,6 @@ float readFloat(vec2 a)
 
 // ==============================================================
 
-const vec3 i_GROUND_A = vec3(.13,.76,.37);
-const vec3 i_GROUND_B = vec3(.65,.31,.11);
-const vec3 i_SKY = vec3(.47,.71,1.);
-
 int checkerFlag;
 vec3 stripes(vec2 xy, vec3 base)
 {
@@ -41,11 +38,14 @@ vec3 stripes(vec2 xy, vec3 base)
         return vec3(.2+.8*mod(xy.x + xy.y, 2.));
     }
 
-    vec3 add = checkerFlag > 0 ? vec3(0,0,.5)*smoothstep(.0, .1, cos(.1*xy.x+seed)) : vec3(0);
+    ////// Dual color
+    // vec3 add = checkerFlag > 0 ? vec3(0,0,.5)*smoothstep(.0, .1, cos(.1*xy.x+seed)) : vec3(0);
+    // xy += .8*sin(.9*xy.yx);
+    // vec3 ret = base*(1.-.05*abs(floor(mod(8.*(xy.x+2.-xy.y),4.))-2.));
+    // return ret + add;
 
     xy += .8*sin(.9*xy.yx);
-    vec3 ret = base*(1.-.05*abs(floor(mod(8.*(xy.x+2.-xy.y),4.))-2.));
-    return ret + add;
+    return base*(1.-.05*abs(floor(mod(8.*(xy.x+2.-xy.y),4.))-2.));
 }
 
 vec3 gnd(vec2 xy, float d, vec3 base)
@@ -95,8 +95,21 @@ vec3 worldColor(vec2 uv, vec3 base)
 
 // ==============================================================
 
+//const vec3 i_GROUND_A = vec3(.13,.76,.37);
+vec3 hsl2rgb(vec3 c) {
+    return c.z+c.y*(clamp(abs(mod(c.x*6.+vec3(0,4,2),6.)-3.)-1.,0.,1.)-.5)*(1.-abs(2.*c.z-1.));
+}
+
+
 vec3 draw(vec2 coord)
 {
+    const vec3 i_SKY = vec3(.47,.71,1.);
+    // TODO -991, beat level -993
+    float ga = fract(seed*.11);
+    vec3 GROUND_A = hsl2rgb(vec3(ga,.57,.45));
+    vec3 GROUND_B = hsl2rgb(vec3(fract(ga-.3),.57,.45));
+    vec3 BAWL = hsl2rgb(vec3(fract(ga+.5),.57,.45));
+
     vec2 m = (coord - g[0].xy * .5) / g[0].y;
     m.x += g[0].w;
     m *= 3.5;
@@ -105,17 +118,17 @@ vec3 draw(vec2 coord)
     vec3 fc;
     if (length(m-pos) < .05) {
         m -= pos;
-        fc = 1.-i_GROUND_A;
+        fc = BAWL;
         float x = max((8.*length(m-vec2(.04))) + .9,0.);
         fc *= 1./x/x;
     } else {
         checkerFlag = 1;
-        fc = worldColor(m, i_GROUND_A);
+        fc = worldColor(m, GROUND_A);
         checkerFlag = 0;
         if (fc == vec3(0)) {
-            fc = worldColor(2.*m - 3.*vec2(g[0].w-99.,-.1), i_GROUND_B);
+            fc = worldColor(2.*m - 3.*vec2(g[0].w-99.,-.1), GROUND_B);
             if (fc == vec3(0)) {
-                fc = worldColor(4.*m - 8.*vec2(g[0].w-99.,0), i_GROUND_B);
+                fc = worldColor(4.*m - 8.*vec2(g[0].w-99.,0), GROUND_B);
                 if (fc == vec3(0)) {
                     fc = i_SKY;
                 } else {
