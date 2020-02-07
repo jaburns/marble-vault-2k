@@ -12,7 +12,7 @@ $b = g.createShader(g.FRAGMENT_SHADER),
 g.shaderSource($b, $a),
 g.compileShader($b),
 g.attachShader($shader, $b),
-//console.log(g.getShaderInfoLog($b)),
+console.log(g.getShaderInfoLog($b)),
 
 g.linkProgram($shader),
 

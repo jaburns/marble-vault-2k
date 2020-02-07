@@ -33,7 +33,7 @@ float rand(float x)
 
 float map(vec2 p)
 {
-    vec2 p1 = vec2(mod(v.x+.5, 1.)-.5, p.y);
+    vec2 p1 = vec2(mod(p.x+.5, 1.)-.5, p.y);
 
     float challenge = abs(seed/1e3);
     float oa =                      rand(p.x+ .5+9.)*(.9+challenge);
@@ -44,6 +44,14 @@ float map(vec2 p)
     return seed > 0. && p.y + oa > 0.
         ? -1.
         : min(p.x-.7*p.y-7., merge(merge(a,c),b));
+}
+
+vec2 getNorm(vec2 p)
+{
+    vec2 eps = vec2(1e-4, 0);
+    return normalize(vec2(
+        map(p - eps.xy) - map(p + eps.xy),
+        map(p - eps.yx) - map(p + eps.yx)));
 }
 
 // ====================================================================================================================
@@ -89,14 +97,15 @@ vec3 draw(vec2 coord)
         // uv = 4.*m - 8.*vec2(g[0].w-99.,  0)
         vec2 uv = pow(2.,i)*m - (pow(i+1.,2.)-1.) * vec2(g[0].w-99.,.1*i-.2);
 
-        d = 3.*map(uv);
+        d = map(uv);
 
         if (d > 0.) {
+            d *= i > 0. ? .5 : 2.;
             d = min(1., d);
             float r = 1. - sqrt(2.*d - d*d); 
 
             // Curve the lookup coordinates around the edge of the surface.
-            uv += .2*vec2(-r,r);
+            uv += (i > 0. ? 1. : .5)*vec2(-r,r);
 
             // If we're at the finish line, get the checkerboard color.
             if (i == 0. && uv.x > 19.8*3.5 && uv.x < 20.*3.5) {
@@ -109,8 +118,8 @@ vec3 draw(vec2 coord)
 
             // Get color of the stripes.
             vec3 stripes = colorFromHue(i == 0. ? ga : ga - .3)
-                * (1.-.05*abs(floor(mod(8.*(uv.x+2.-uv.y),4.))-2.)) // Stripe color
-                * (1.-.5*pow(clamp(d+.5,.5,1.),2.));                // Lighting
+                * (1.-.05*abs(floor(mod(8.*(uv.x+2.-uv.y),4.))-2.))        // Stripe color
+                * (.5 + r * (.2 + max(0.,dot(normalize(vec2(1)), getNorm(uv))))); // Lighting
 
             return mix(stripes, i_SKY, i*.3);
         }
@@ -156,10 +165,7 @@ void main()
         pos += .05 * vel;
 
         float depth = map(pos);
-        vec2 eps = vec2(1e-4, 0);
-        vec2 norm = normalize(vec2(
-            map(pos - eps.xy) - map(pos + eps.xy),
-            map(pos - eps.yx) - map(pos + eps.yx)));
+        vec2 norm = getNorm(pos);
         vec2 tang = vec2(norm.y, -norm.x);
 
         if (depth >= -.045) {
