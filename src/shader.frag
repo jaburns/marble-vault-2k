@@ -30,19 +30,14 @@ float readFloat(vec2 a)
 
 // ==============================================================
 
-int checkerFlag;
+int drawingFG;
+
 vec3 stripes(vec2 xy, vec3 base)
 {
-    if (checkerFlag>0 && xy.x > 19.8*3.5 && xy.x < 20.*3.5) {
+    if (drawingFG>0 && xy.x > 19.8*3.5 && xy.x < 20.*3.5) {
         xy = floor(10.*xy);
         return vec3(.2+.8*mod(xy.x + xy.y, 2.));
     }
-
-    ////// Dual color
-    // vec3 add = checkerFlag > 0 ? vec3(0,0,.5)*smoothstep(.0, .1, cos(.1*xy.x+seed)) : vec3(0);
-    // xy += .8*sin(.9*xy.yx);
-    // vec3 ret = base*(1.-.05*abs(floor(mod(8.*(xy.x+2.-xy.y),4.))-2.));
-    // return ret + add;
 
     xy += .8*sin(.9*xy.yx);
     return base*(1.-.05*abs(floor(mod(8.*(xy.x+2.-xy.y),4.))-2.));
@@ -122,9 +117,9 @@ vec3 draw(vec2 coord)
         float x = max((8.*length(m-vec2(.04))) + .9,0.);
         fc *= 1./x/x;
     } else {
-        checkerFlag = 1;
+        drawingFG = 1;
         fc = worldColor(m, GROUND_A);
-        checkerFlag = 0;
+        drawingFG = 0;
         if (fc == vec3(0)) {
             fc = worldColor(2.*m - 3.*vec2(g[0].w-99.,-.1), GROUND_B);
             if (fc == vec3(0)) {
@@ -143,6 +138,8 @@ vec3 draw(vec2 coord)
     return fc;
 }
 
+// 1951
+
 void main()
 {
     vec2 coord = gl_FragCoord.xy;
@@ -152,12 +149,12 @@ void main()
 
     vec2 vel = vec2(readFloat(g[2].xy), readFloat(g[2].zw));
 
-    bool right = mod(g[0].z     , 2.) > .9;
-    bool down  = mod(g[0].z / 2., 2.) > .9;
+    int right = int(mod(g[0].z     , 2.));
+    int down  = int(mod(g[0].z / 2., 2.));
     seed = floor(g[0].z / 4.);
 
-    bool stomped = mod(g[3].z,      2.) > .9;
-    bool dashed  = mod(g[3].z / 2., 2.) > .9;
+    int stomped = int(mod(g[3].z,      2.));
+    int dashed  = int(mod(g[3].z / 2., 2.));
     int counter = int(g[3].w);
 
 // Rendering
@@ -192,28 +189,24 @@ void main()
         } else {
             counter++;
             if (counter == 6) {
-                stomped = false;
-                dashed = false;
+                stomped = dashed = 0;
             }
-            if (!stomped && down) {
-                stomped = true;
-                dashed = true;
+            if (stomped + 1 == down) {
+                stomped = dashed = 1;
                 vel.y = -1.;
             }
-            if (!dashed && right) {
-                dashed = true;
+            if (dashed + 1 == right) {
+                dashed = 1;
                 vel.x += .5 - .5*vel.x;
             }
         }
 
-        gl_FragColor = vec4(0, 0, ((stomped?1.:0.)+(dashed?2.:0.))/255., float(counter)/255.); // g[3]
-        if (coord.x < 2.) {
-            pos /= 3.5;
-            pos.x -= g[0].w;
-            gl_FragColor = vec4(writeFloat(pos.x), writeFloat(pos.y)); // g[1]
-        }
-        else if (coord.x < 3.) {
-            gl_FragColor = vec4(writeFloat(vel.x), writeFloat(vel.y)); // g[2]
-        }
+        pos /= 3.5;
+        pos.x -= g[0].w;
+
+        gl_FragColor = 
+            coord.x < 2. ? vec4(writeFloat(pos.x), writeFloat(pos.y)) : // g[1]
+            coord.x < 3. ? vec4(writeFloat(vel.x), writeFloat(vel.y)) : // g[2]
+                vec4(ivec4(0, 0, stomped+2*dashed, counter))/255.     ; // g[3]
     }
 }
