@@ -33,14 +33,13 @@ float rand(float x)
 
 float map(vec2 p)
 {
-    vec2 v = p;
-    v.x = mod(v.x+.5, 1.)-.5;
+    vec2 p1 = vec2(mod(v.x+.5, 1.)-.5, p.y);
 
-    float weird = abs(seed/1e3);
-    float oa =                   rand(p.x+ .5+9.)*(.9+weird);
-    float a = length(v+vec2( 0,             oa                -.5*weird)) - .7 - .6*rand(p.x+ .5);
-    float b = length(v+vec2(-1,  rand(p.x+1.5+9.)*(.9+weird)  -.5*weird)) - .7 - .6*rand(p.x+1.5);
-    float c = length(v+vec2( 1,  rand(p.x- .5+9.)*(.9+weird)  -.5*weird)) - .7 - .6*rand(p.x- .5);
+    float challenge = abs(seed/1e3);
+    float oa =                      rand(p.x+ .5+9.)*(.9+challenge);
+    float a = length( p1 + vec2( 0,              oa                 -.5*challenge)) - .7 - .6*rand(p.x+ .5);
+    float b = length( p1 + vec2(-1, rand(p.x+1.5+9.)*(.9+challenge) -.5*challenge)) - .7 - .6*rand(p.x+1.5);
+    float c = length( p1 + vec2( 1, rand(p.x- .5+9.)*(.9+challenge) -.5*challenge)) - .7 - .6*rand(p.x- .5);
     
     return seed > 0. && p.y + oa > 0.
         ? -1.
@@ -90,11 +89,11 @@ vec3 draw(vec2 coord)
         // uv = 4.*m - 8.*vec2(g[0].w-99.,  0)
         vec2 uv = pow(2.,i)*m - (pow(i+1.,2.)-1.) * vec2(g[0].w-99.,.1*i-.2);
 
-        d = map(uv);
+        d = 3.*map(uv);
 
         if (d > 0.) {
-            d = 1. - clamp(3.*d, 0., 1.);
-            float r = 1. - sqrt(1. - d*d);
+            d = min(1., d);
+            float r = 1. - sqrt(2.*d - d*d); 
 
             // Curve the lookup coordinates around the edge of the surface.
             uv += .2*vec2(-r,r);
