@@ -5,15 +5,6 @@ vec2 pos;
 
 // ==============================================================
 
-float rand(vec2 co)
-{
-    return fract(sin(dot(co,vec2(11.,79.))) * 4e5);
-    //return fract(sin(n.x+99.*n.y)*43758.5453123);
-    //return fract(sin(dot(co,vec2(12.9898,78.233))) * 43758.5453);
-}
-
-// ==============================================================
-
 vec2 writeFloat(float a)
 {
     a = (a + 1.) / 2.;
@@ -30,9 +21,7 @@ float readFloat(vec2 a)
 
 // ==============================================================
 
-int drawingFG;
-
-vec3 gnd(vec2 xy, float d, vec3 base)
+vec3 gnd(vec2 xy, float d, vec3 base, bool fg)
 {
     d = clamp(d, 0., 1.);
     float b = 1. - d;
@@ -42,7 +31,7 @@ vec3 gnd(vec2 xy, float d, vec3 base)
     xy += .2*vec2(-r,r);
 
     // If we're at the finish line, get the checkerboard color.
-    if (drawingFG>0 && xy.x > 19.8*3.5 && xy.x < 20.*3.5) {
+    if (fg && xy.x > 19.8*3.5 && xy.x < 20.*3.5) {
         xy = floor(10.*xy);
         return vec3(.2+.8*mod(xy.x + xy.y, 2.));
     }
@@ -61,6 +50,11 @@ vec3 gnd(vec2 xy, float d, vec3 base)
 float merge(float a, float b)
 {
     return -length(min(vec2(a, b), 0.)) + max(min(a, b), 0.);
+}
+
+float rand(vec2 co)
+{
+    return fract(sin(dot(co,vec2(11.,79.))) * 4e5);
 }
 
 float map(vec2 p)
@@ -85,15 +79,6 @@ float map(vec2 p)
     return min(p.x-.7*p.y-7., merge(merge(a,c),b));
 }
 
-vec3 worldColor(vec2 uv, vec3 base)
-{
-    float d = map(uv);
-    return
-        d < -.045 ? vec3(0) :
-        d < 0. ? vec3(0) :
-        gnd(uv, 3.*d, base);
-}
-
 // ==============================================================
 
 vec3 hsl2rgb(vec3 c)
@@ -106,9 +91,6 @@ vec3 draw(vec2 coord)
     const vec3 i_SKY = vec3(.47,.71,1.);
 
     float ga = fract(seed*.11);
-    vec3 GROUND_A = hsl2rgb(vec3(ga,.57,.45));
-    vec3 GROUND_B = hsl2rgb(vec3(fract(ga-.3),.57,.45));
-    vec3 BAWL = hsl2rgb(vec3(fract(ga+.5),.57,.45));
 
     vec2 m = (coord - g[0].xy * .5) / g[0].y;
     m.x += g[0].w;
@@ -118,43 +100,48 @@ vec3 draw(vec2 coord)
     if (length(m-pos) < .05) {
         m -= pos;
         float x = max((8.*length(m-vec2(.04))) + .9,0.);
-        return BAWL/x/x;
+        return hsl2rgb(vec3(fract(ga+.5),.57,.45))/x/x;
     } 
 
-    // 1913
+    for (float i = 0.; i < 3.; i++) {
+        // uv = 1.*m - 0.*vec2(g[0].w-99.,-.2)
+        // uv = 2.*m - 3.*vec2(g[0].w-99.,-.1)
+        // uv = 4.*m - 8.*vec2(g[0].w-99.,  0)
+        vec2 uv = pow(2.,i)*m - (pow(i+1.,2.)-1.) * vec2(g[0].w-99.,.1*i-.2);
 
-    drawingFG = 1;
-    vec3 fc = worldColor(m, GROUND_A);
-    drawingFG = 0;
-    if (fc == vec3(0)) {
-        fc = worldColor(2.*m - 3.*vec2(g[0].w-99.,-.1), GROUND_B);
-        if (fc == vec3(0)) {
-            fc = worldColor(4.*m - 8.*vec2(g[0].w-99.,0), GROUND_B);
-            if (fc == vec3(0)) {
-                fc = i_SKY;
-            } else {
-                fc = mix(fc, i_SKY, .6);
-            }
-        } else {
-            fc = mix(fc, i_SKY, .3);
+        float d = map(uv);
+
+        if (d > 0.) {
+            return mix(
+                gnd(
+                    uv,
+                    3.*d,
+                    i == 0.
+                        ? hsl2rgb(vec3(ga,.57,.45))
+                        : hsl2rgb(vec3(fract(ga-.3),.57,.45)),
+                    i == 0.
+                ),
+                i_SKY,
+                i*.3
+            );
         }
     }
-    return fc;
+
+    return i_SKY;
 }
 
 void main()
 {
     vec2 coord = gl_FragCoord.xy;
+    vec2 vel = vec2(readFloat(g[2].xy), readFloat(g[2].zw));
+
     pos = vec2(readFloat(g[1].xy), readFloat(g[1].zw));
     pos.x += g[3].x;
     pos *= 3.5;
-
-    vec2 vel = vec2(readFloat(g[2].xy), readFloat(g[2].zw));
+    seed = floor(g[0].z / 4.);
 
     int right = int(mod(g[0].z     , 2.));
     int down  = int(mod(g[0].z / 2., 2.));
-    seed = floor(g[0].z / 4.);
-
     int stomped = int(mod(g[3].z,      2.));
     int dashed  = int(mod(g[3].z / 2., 2.));
     int counter = int(g[3].w);
@@ -189,8 +176,7 @@ void main()
                 vel = dot(vel, tang) * tang;
             }
         } else {
-            counter++;
-            if (counter == 6) {
+            if (++counter == 6) {
                 stomped = dashed = 0;
             }
             if (stomped + 1 == down) {

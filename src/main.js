@@ -48,7 +48,7 @@ g.vertexAttribPointer(
 
 $seed = 0,
 
-$init = $b => (
+$init = $a => (
     $stateBufferArray = [128,1,128,1,128,1,128,1,255,1,192,1,128,1,128,0],
     $stateBuffer = new Uint8Array(16),
     $stuck =
@@ -56,7 +56,7 @@ $init = $b => (
     $frames = 
     $cameraOffset = 
     $camFromBall = 0,
-    $seed = $b?$seed:prompt(s.innerText+'\nTrack?',$seed+1)|0,
+    $seed = $a?$seed:prompt(s.innerText+'\nTrack?',$seed+1)|0,
     $initCameraOffset = 1,
     $keys = {}
 ),
@@ -66,9 +66,9 @@ $init(),
 document.onkeydown = $a => $keys[$a.keyCode] = 1,
 document.onkeyup   = $a => $keys[$a.keyCode] = 0,
 
-$timeFormat = $b => ($b |= 0, $b > 9 ? $b : '0'+$b),
+$timeFormat = $a => ($a |= 0, $a > 9 ? $a : '0'+$a),
 
-setInterval($b => (
+setInterval($a => (
     g.readPixels(
         g.drawArrays(
             g.TRIANGLES,
