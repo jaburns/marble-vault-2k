@@ -19,6 +19,56 @@ float readFloat(vec2 a)
     return (a.x/255. + a.y/255./255.) * 2. - 1.;
 }
 
+// 
+
+
+    const vec3 WHITE  = vec3(1);
+    const vec3 BLUE   = vec3(113.,175.,255.)/255.;
+    const vec3 YELLOW = vec3(254.,219.,99.)/255.;
+    const vec3 PINK   = vec3(229.,106.,111.)/255.;
+    const vec3 PURPLE = vec3(34.,42.,79.)/255.;
+
+vec3 blend3(vec3 ca, vec3 cb, vec3 cc, float x)
+{
+    x = clamp(x,0.,.9999);
+    vec3 a = x < .5 ? ca : cb;
+    vec3 b = x < .5 ? cb : cc;
+    return mix(a, b, 2.*mod(x,.5));
+}
+vec3 top(float x)
+{
+    return blend3(BLUE, .5*BLUE, PURPLE, x);
+}
+vec3 bottom(float x)
+{
+    return blend3(BLUE, YELLOW, PINK, x);
+} 
+vec3 sunr(float x)
+{
+    return mix(WHITE, YELLOW, x);
+}
+vec3 sky(vec2 m)
+{
+    float horz = 1.-2.*m.y;
+    m *= 40.;
+
+    float r = length(m - vec2(15.));
+    
+    //sunY = 2.*(sunY-.25);
+    float sunY = .0;
+    float sunCore = smoothstep(1., 1.2, r);
+    float sunRing = 1.-exp(-.2*r);
+    
+    vec3 ctop = top(sunY);
+    vec3 cbot = bottom(sunY);
+    vec3 cring = sunr(sunY);
+
+    vec3 color = mix(cring, mix(ctop,cbot,horz), sunRing);
+    color = mix(WHITE, color , sunCore);
+    
+    return color;
+}
+
 // ====================================================================================================================
 
 float merge(float a, float b)
@@ -63,24 +113,19 @@ vec2 getNorm(vec2 p)
 // }
 vec3 colorFromHue(float x)
 {
-    return .45 + .51*(
-        clamp(
-            abs(
-                mod( fract(x) * 6. + vec3(0,4,2), 6.) - 3.
-            ) - 1.,
-            0.,
-            1.
-        ) - .5
+    return .45 + .51*clamp(
+        abs( mod( fract(x) * 6. + vec3(0,4,2), 6. ) - 3. ) - 1.5,
+        -.5, .5
     );
 }
 
 vec3 draw(vec2 coord)
 {
-    const vec3 i_SKY = vec3(.47,.71,1.);
-
     float d, ga = fract(seed*.11);
 
     vec2 m = (coord - g[0].xy * .5) / g[0].y;
+    vec3 isky = sky(m);
+
     m.x += g[0].w;
     m *= 3.5;
     m.y -= .9;
@@ -96,6 +141,7 @@ vec3 draw(vec2 coord)
         // uv = 2.*m - 3.*vec2(g[0].w-99.,-.1)
         // uv = 4.*m - 8.*vec2(g[0].w-99.,  0)
         vec2 uv = pow(2.,i)*m - (pow(i+1.,2.)-1.) * vec2(g[0].w-99.,.1*i-.2);
+        vec2 norm = getNorm(uv);
 
         d = map(uv);
 
@@ -103,6 +149,7 @@ vec3 draw(vec2 coord)
             d *= i > 0. ? .5 : 2.;
             d = min(1., d);
             float r = 1. - sqrt(2.*d - d*d); 
+            vec2 norm = getNorm(uv);
 
             // Curve the lookup coordinates around the edge of the surface.
             uv += (i > 0. ? 1. : .5)*vec2(-r,r);
@@ -119,13 +166,13 @@ vec3 draw(vec2 coord)
             // Get color of the stripes.
             vec3 stripes = colorFromHue(i == 0. ? ga : ga - .3)
                 * (1.-.05*abs(floor(mod(8.*(uv.x+2.-uv.y),4.))-2.))        // Stripe color
-                * (.5 + r * (.2 + max(0.,dot(normalize(vec2(1)), getNorm(uv))))); // Lighting
+                * (.5 + r * (.2 + max(0.,dot(normalize(vec2(1)), norm)))); // Lighting
 
-            return mix(stripes, i_SKY, i*.3);
+            return mix(stripes, BLUE, i*.3);
         }
     }
 
-    return i_SKY;
+    return isky;
 }
 
 // ====================================================================================================================
