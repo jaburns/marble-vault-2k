@@ -32,25 +32,28 @@ float readFloat(vec2 a)
 
 int drawingFG;
 
-vec3 stripes(vec2 xy, vec3 base)
-{
-    if (drawingFG>0 && xy.x > 19.8*3.5 && xy.x < 20.*3.5) {
-        xy = floor(10.*xy);
-        return vec3(.2+.8*mod(xy.x + xy.y, 2.));
-    }
-
-    xy += .8*sin(.9*xy.yx);
-    return base*(1.-.05*abs(floor(mod(8.*(xy.x+2.-xy.y),4.))-2.));
-}
-
 vec3 gnd(vec2 xy, float d, vec3 base)
 {
     d = clamp(d, 0., 1.);
     float b = 1. - d;
     float r = 1. - sqrt(1. - b*b);
 
-    return stripes(xy + .2*vec2(-r,r), base)
-        * (1.-.5*pow(clamp(d+.5,.5,1.),2.));
+    // Curve the lookup coordinates around the edge of the surface.
+    xy += .2*vec2(-r,r);
+
+    // If we're at the finish line, get the checkerboard color.
+    if (drawingFG>0 && xy.x > 19.8*3.5 && xy.x < 20.*3.5) {
+        xy = floor(10.*xy);
+        return vec3(.2+.8*mod(xy.x + xy.y, 2.));
+    }
+
+    // Add some curvature to the stripes.
+    xy += .8*sin(.9*xy.yx);
+
+    // Get color of the stripes.
+    return base
+        * (1.-.05*abs(floor(mod(8.*(xy.x+2.-xy.y),4.))-2.)) // Stripe color
+        * (1.-.5*pow(clamp(d+.5,.5,1.),2.));                // Lighting
 }
 
 // ==============================================================
@@ -84,22 +87,24 @@ float map(vec2 p)
 
 vec3 worldColor(vec2 uv, vec3 base)
 {
-    float y = map(uv);
-    return y < -.045 ? vec3(0) : y < 0. ? vec3(0) : gnd(uv, 3.*y, base);
+    float d = map(uv);
+    return
+        d < -.045 ? vec3(0) :
+        d < 0. ? vec3(0) :
+        gnd(uv, 3.*d, base);
 }
 
 // ==============================================================
 
-//const vec3 i_GROUND_A = vec3(.13,.76,.37);
-vec3 hsl2rgb(vec3 c) {
+vec3 hsl2rgb(vec3 c)
+{
     return c.z+c.y*(clamp(abs(mod(c.x*6.+vec3(0,4,2),6.)-3.)-1.,0.,1.)-.5)*(1.-abs(2.*c.z-1.));
 }
-
 
 vec3 draw(vec2 coord)
 {
     const vec3 i_SKY = vec3(.47,.71,1.);
-    // TODO -991, beat level -993
+
     float ga = fract(seed*.11);
     vec3 GROUND_A = hsl2rgb(vec3(ga,.57,.45));
     vec3 GROUND_B = hsl2rgb(vec3(fract(ga-.3),.57,.45));
@@ -110,35 +115,32 @@ vec3 draw(vec2 coord)
     m *= 3.5;
     m.y -= .9;
 
-    vec3 fc;
     if (length(m-pos) < .05) {
         m -= pos;
-        fc = BAWL;
         float x = max((8.*length(m-vec2(.04))) + .9,0.);
-        fc *= 1./x/x;
-    } else {
-        drawingFG = 1;
-        fc = worldColor(m, GROUND_A);
-        drawingFG = 0;
+        return BAWL/x/x;
+    } 
+
+    // 1913
+
+    drawingFG = 1;
+    vec3 fc = worldColor(m, GROUND_A);
+    drawingFG = 0;
+    if (fc == vec3(0)) {
+        fc = worldColor(2.*m - 3.*vec2(g[0].w-99.,-.1), GROUND_B);
         if (fc == vec3(0)) {
-            fc = worldColor(2.*m - 3.*vec2(g[0].w-99.,-.1), GROUND_B);
+            fc = worldColor(4.*m - 8.*vec2(g[0].w-99.,0), GROUND_B);
             if (fc == vec3(0)) {
-                fc = worldColor(4.*m - 8.*vec2(g[0].w-99.,0), GROUND_B);
-                if (fc == vec3(0)) {
-                    fc = i_SKY;
-                } else {
-                    fc = mix(fc, i_SKY, .6);
-                }
+                fc = i_SKY;
             } else {
-                fc = mix(fc, i_SKY, .3);
+                fc = mix(fc, i_SKY, .6);
             }
+        } else {
+            fc = mix(fc, i_SKY, .3);
         }
     }
-
     return fc;
 }
-
-// 1951
 
 void main()
 {
