@@ -1,6 +1,7 @@
 uniform mat4 g;
 
 float seed;
+float shake;
 vec2 pos;
 
 // ====================================================================================================================
@@ -76,6 +77,10 @@ vec3 colorFromHue(float x)
 
 vec3 draw(vec2 coord)
 {
+    coord += 50.
+        * exp(.2*shake - 6.) // (-.2 * (30. - shake))
+        * vec2(rand(shake), rand(9.+shake));
+
     vec2 dims = vec2(floor(g[0].x/1e5), mod(g[0].x,1e5));
     vec2 m = (coord - dims * .5) / dims.y;
 
@@ -114,7 +119,7 @@ vec3 draw(vec2 coord)
     m *= 3.5;
     m.y -= .9;
 
-    if (length(m-pos) < .05) {
+    if (length(m-pos) < .06) {
         m -= pos;
         d = max((8.*length(m-vec2(.04))) + .9,0.);
         return colorFromHue(ga+.5)/d/d;
@@ -162,6 +167,12 @@ vec3 draw(vec2 coord)
 
 void main()
 {
+    int right   = int(mod(g[0].z     , 2.));
+    int down    = int(mod(g[0].z / 2., 2.));
+    int boost   = int(mod(g[3].z,      4.));
+    int counter = int(mod(g[3].w,      8.));
+    shake       =   floor(g[3].w / 8.);
+
     vec2 coord = gl_FragCoord.xy;
     vec2 vel = vec2(readFloat(g[2].xy), readFloat(g[2].zw));
 
@@ -170,16 +181,11 @@ void main()
     pos *= 3.5;
     seed = floor(g[0].z / 4.);
 
-    int right   = int(mod(g[0].z     , 2.));
-    int down    = int(mod(g[0].z / 2., 2.));
-    int boost   = int(mod(g[3].z,      4.));
-    int counter = int(g[3].w);
-
 // Rendering
 
     gl_FragColor = vec4(
         (
-            draw(coord+.5*vec2(-.75, .25))
+              draw(coord+.5*vec2(-.75, .25))
             + draw(coord+.5*vec2(-.25,-.75))
             + draw(coord+.5*vec2( .25, .75))
             + draw(coord+.5*vec2( .75,-.25))
@@ -197,16 +203,22 @@ void main()
         float depth = map(pos);
         vec2 norm = getNorm(pos);
         vec2 tang = vec2(norm.y, -norm.x);
+        float dotNormVel = dot(norm, vel);
 
-        if (depth >= -.045) {
-            counter = 0;
+        if (shake > 0.) shake--;
 
-            if (dot(norm, vel) < 0.) {
-                pos += norm * (depth + .045);
+        if (depth >= -.055) {
+            if (dotNormVel < 0.) {
+                if (counter > 0) {
+                    shake = 30. * min(-dotNormVel, 1.);
+                }
+                pos += norm * (depth + .055);
                 vel = dot(vel, tang) * tang;
             }
+
+            counter = 0;
         } else {
-            if (++counter == 6) {
+            if (counter < 7 && ++counter == 6) {
                 boost = 0;
             }
             if (boost < 2 && down == 1) {
@@ -225,6 +237,6 @@ void main()
         gl_FragColor = 
             coord.x < 2. ? vec4(writeFloat(pos.x), writeFloat(pos.y)) : // g[1]
             coord.x < 3. ? vec4(writeFloat(vel.x), writeFloat(vel.y)) : // g[2]
-                vec4(ivec4(0, 0, boost, counter))/255.                ; // g[3]
+                vec4(ivec4(0, 0, boost, counter+8*int(shake)))/255.   ; // g[3]
     }
 }

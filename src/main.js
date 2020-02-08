@@ -51,6 +51,7 @@ $seed = 0,
 $init = $a => (
     $stateBufferArray = [128,1,128,1,128,1,128,1,255,1,192,1,128,1,128,0],
     $stateBuffer = new Uint8Array(16),
+    $win =
     $ballPos = 
     $frames = 
     $cameraOffset = 
@@ -82,7 +83,7 @@ setInterval($a => (
     ), 
     $stateBufferArray = Array.from($stateBuffer),
     $stateBufferArray[0] = 1e5*(a.width = innerWidth) + (a.height = innerHeight),
-    $stateBufferArray[2] = $keys[39]|0 + 2*$keys[40]|0 + 4*$seed, // 39 = Right arrow, 40 = Down arrow
+    $stateBufferArray[2] = (!$win && $keys[39]|0 + 2*$keys[40]|0) + 4*$seed, // 39 = Right arrow, 40 = Down arrow
     $stateBufferArray[12] = $cameraOffset,
 
     $ballVelX = ($stateBufferArray[8]/255 + $stateBufferArray[9]/255/255) * 2 - 1,
@@ -90,11 +91,15 @@ setInterval($a => (
     $initCameraOffset = 0,
 
     $camFromBall += ($ballVelX / 3 - $camFromBall) / 99,
-    $cameraOffset = $camFromBall + $ballPos,
+    $win && $win++ || (
+        $cameraOffset = $camFromBall + $ballPos,
+        $frames++,
+        $ballPos > 20 && ($win = 1)
+    ),
     $stateBufferArray[3] = $cameraOffset,
 
-    $keys[82]     && $init(1), // R key to reset
-    $ballPos > 20 && $init(),  // Win condition
+    $keys[82] && $init(1), // R key to reset
+    $win > 180 && $init(),
 
-    s.innerText = `Track#${$seed}#>#${$timeFormat(++$frames/3600)}:${$timeFormat($frames/60%60)}:${$timeFormat($frames/.6%100)}`
+    s.innerText = `Track#${$seed}#>#${$timeFormat($frames/3600)}:${$timeFormat($frames/60%60)}:${$timeFormat($frames/.6%100)}`
 ), 16)
