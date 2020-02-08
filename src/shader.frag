@@ -96,6 +96,7 @@ vec3 draw(vec2 coord)
         // uv = 2.*m - 3.*vec2(g[0].w-99.,-.1)
         // uv = 4.*m - 8.*vec2(g[0].w-99.,  0)
         vec2 uv = pow(2.,i)*m - (pow(i+1.,2.)-1.) * vec2(g[0].w-99.,.1*i-.2);
+        vec2 norm = getNorm(uv);
 
         d = map(uv);
 
@@ -119,7 +120,7 @@ vec3 draw(vec2 coord)
             // Get color of the stripes.
             vec3 stripes = colorFromHue(i == 0. ? ga : ga - .3)
                 * (1.-.05*abs(floor(mod(8.*(uv.x+2.-uv.y),4.))-2.))        // Stripe color
-                * (.5 + r * (.2 + max(0.,dot(normalize(vec2(1)), getNorm(uv))))); // Lighting
+                * (.5 + r * (.2 + max(0.,dot(normalize(vec2(1)), norm)))); // Lighting
 
             return mix(stripes, i_SKY, i*.3);
         }
