@@ -28,6 +28,7 @@ g.vertexAttribPointer(
 //
 //   JS/GLSL shared state buffer
 //
+  // TODO  move all the RWs to be contiguous
 //  0 : g[0].x : W  : 100000 * canvas width + canvas height
 //  1 : g[0].y : RW : ball angle
 //  2 : g[0].z : W  : key input flags & seed
@@ -49,7 +50,7 @@ g.vertexAttribPointer(
 $seed = 0,
 
 $init = $a => (
-    $stateBufferArray = [128,1,0,0,128,1,128,1,255,1,192,1,0,0,0,0],
+    $stateBufferArray = [128,1,0,0,128,1,128,1,255,1,192,1,0,100,0,0],
     $stateBuffer = new Uint8Array(16),
     $win =
     $ballPos = 

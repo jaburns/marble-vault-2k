@@ -2,6 +2,8 @@ uniform mat4 g;
 
 float seed;
 float shake;
+float angle;
+float omega;
 vec2 pos;
 
 // ====================================================================================================================
@@ -121,8 +123,8 @@ vec3 draw(vec2 coord)
 
     if (length(m-pos) < .06) {
         m -= pos;
-        d = max((8.*length(m-vec2(.04))) + .9,0.);
-        return colorFromHue(ga+.5)/d/d;
+        d = max((7.*length(m-vec2(.04))) + .9,0.);
+        return (dot(m,vec2(sin(angle),cos(angle))) > 0. ? vec3(1) : colorFromHue(ga+.5)) /d/d;
     } 
 
     for (float i = 0.; i < 3.; i++) {
@@ -172,6 +174,8 @@ void main()
     int boost   = int(mod(g[3].z,      4.));
     int counter = int(mod(g[3].w,      8.));
     shake       =   floor(g[3].w / 8.);
+    angle       = 6.28 * g[0].y / 255.;
+    omega       = 2. * g[3].y / 255. - 1.;
 
     vec2 coord = gl_FragCoord.xy;
     vec2 vel = vec2(readFloat(g[2].xy), readFloat(g[2].zw));
@@ -200,6 +204,8 @@ void main()
         vel.y -= .01;
         pos += .05 * vel;
 
+        angle += omega;
+
         float depth = map(pos);
         vec2 norm = getNorm(pos);
         vec2 tang = vec2(norm.y, -norm.x);
@@ -214,6 +220,8 @@ void main()
                 }
                 pos += norm * (depth + .055);
                 vel = dot(vel, tang) * tang;
+
+                omega = .6 * length(vel) * sign(cross(vec3(vel,0),vec3(norm,0)).z);
             }
 
             counter = 0;
@@ -234,9 +242,15 @@ void main()
         pos /= 3.5;
         pos.x -= g[0].w;
 
-        gl_FragColor = 
+        gl_FragColor =
+            coord.x < 1. ? vec4(0, fract(angle/6.28), 0, 0) : // g[0]   
             coord.x < 2. ? vec4(writeFloat(pos.x), writeFloat(pos.y)) : // g[1]
             coord.x < 3. ? vec4(writeFloat(vel.x), writeFloat(vel.y)) : // g[2]
-                vec4(ivec4(0, 0, boost, counter+8*int(shake)))/255.   ; // g[3]
+                vec4(// g[3]
+                    0,
+                    (omega+1.)/2.,
+                    float(boost)/255.,
+                    (float(counter)+8.*shake)/255.
+                );
     }
 }
