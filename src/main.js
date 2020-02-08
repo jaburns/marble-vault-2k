@@ -28,8 +28,8 @@ g.vertexAttribPointer(
 //
 //   JS/GLSL shared state buffer
 //
-//  0 : g[0].x : W  : canvas width
-//  1 : g[0].y : W  : canvas height
+//  0 : g[0].x : W  : 100000 * canvas width + canvas height
+//  1 : g[0].y : unused
 //  2 : g[0].z : W  : key input flags & seed
 //  3 : g[0].w : W  : camera offset x
 //  4 : g[1].x : RW : upper pos.x (relative to camera)
@@ -73,7 +73,7 @@ setInterval($a => (
             g.TRIANGLES,
             g.uniformMatrix4fv(
                 g.getUniformLocation($shader, 'g'),
-                g.viewport(0, 0, $stateBufferArray[0], $stateBufferArray[1]), // Returns 0
+                g.viewport(0, 0, a.width, a.height), // Returns 0
                 $stateBufferArray
             ), // Returns 0
             3
@@ -81,10 +81,8 @@ setInterval($a => (
         0, 4, 1, g.RGBA, 5121, $stateBuffer // UNSIGNED_BYTE = 5121
     ), 
     $stateBufferArray = Array.from($stateBuffer),
-    $stateBufferArray[0] = a.width = innerWidth,
-    $stateBufferArray[1] = a.height = innerHeight,
+    $stateBufferArray[0] = 1e5*(a.width = innerWidth) + (a.height = innerHeight),
     $stateBufferArray[2] = $keys[39]|0 + 2*$keys[40]|0 + 4*$seed, // 39 = Right arrow, 40 = Down arrow
-
     $stateBufferArray[12] = $cameraOffset,
 
     $ballVelX = ($stateBufferArray[8]/255 + $stateBufferArray[9]/255/255) * 2 - 1,

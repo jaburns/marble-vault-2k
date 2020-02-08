@@ -76,11 +76,40 @@ vec3 colorFromHue(float x)
 
 vec3 draw(vec2 coord)
 {
-    const vec3 i_SKY = vec3(.47,.71,1.);
+    vec2 dims = vec2(floor(g[0].x/1e5), mod(g[0].x,1e5));
+    vec2 m = (coord - dims * .5) / dims.y;
 
-    float d, ga = fract(seed*.11);
+    float ga = fract(seed*.11);
+    float d = length(40.*m - vec2(15));
 
-    vec2 m = (coord - g[0].xy * .5) / g[0].y;
+    vec3 sky = mix(
+        vec3(1),
+        vec3(.44,.69,1),
+        min(
+            step(1., d), 
+            1.-exp(-.2*d)
+        )
+    );
+
+// ----- Dusk ----
+//  float d = length(40.*m - vec2(-15,7));
+//  vec3 sky = mix(
+//      vec3(1), 
+//      mix(
+//          vec3(1,.86,.39),
+//          mix(
+//              vec3(.13,.16,.31),
+//              vec3(.9,.42,.44),
+//              1.-2.*m.y
+//          ),
+//          1.-exp(-.2*d)
+//      ),
+//      step(1.,d)
+//  );
+//  // Plus move the light source
+//  // Plus change the ball light source
+// ---------------
+
     m.x += g[0].w;
     m *= 3.5;
     m.y -= .9;
@@ -122,11 +151,11 @@ vec3 draw(vec2 coord)
                 * (1.-.05*abs(floor(mod(8.*(uv.x+2.-uv.y),4.))-2.))        // Stripe color
                 * (.5 + r * (.2 + max(0.,dot(normalize(vec2(1)), norm)))); // Lighting
 
-            return mix(stripes, i_SKY, i*.3);
+            return mix(stripes, vec3(.44,.69,1), i*.3);
         }
     }
 
-    return i_SKY;
+    return sky;
 }
 
 // ====================================================================================================================
