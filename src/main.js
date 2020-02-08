@@ -29,7 +29,7 @@ g.vertexAttribPointer(
 //   JS/GLSL shared state buffer
 //
 //  0 : g[0].x : W  : 100000 * canvas width + canvas height
-//  1 : g[0].y : unused
+//  1 : g[0].y : RW : ball angle
 //  2 : g[0].z : W  : key input flags & seed
 //  3 : g[0].w : W  : camera offset x
 //  4 : g[1].x : RW : upper pos.x (relative to camera)
@@ -41,7 +41,7 @@ g.vertexAttribPointer(
 // 10 : g[2].z : RW : upper vel.y
 // 11 : g[2].w : RW : lower vel.y
 // 12 : g[3].x : W  : previous camera offset x, R : reset
-// 13 : g[3].y : unused
+// 13 : g[3].y : RW : ball angular velocity
 // 14 : g[3].z : RW : jump state flags
 // 15 : g[3].w : RW : jump grace counter
 //
@@ -49,7 +49,7 @@ g.vertexAttribPointer(
 $seed = 0,
 
 $init = $a => (
-    $stateBufferArray = [128,1,128,1,128,1,128,1,255,1,192,1,128,1,128,0],
+    $stateBufferArray = [128,1,0,0,128,1,128,1,255,1,192,1,0,0,0,0],
     $stateBuffer = new Uint8Array(16),
     $win =
     $ballPos = 
@@ -57,7 +57,6 @@ $init = $a => (
     $cameraOffset = 
     $camFromBall = 0,
     $seed = $a?$seed:prompt(s.innerText+'\nTrack?',$seed+1)|0,
-    $initCameraOffset = 1,
     $keys = {}
 ),
 
@@ -87,8 +86,7 @@ setInterval($a => (
     $stateBufferArray[12] = $cameraOffset,
 
     $ballVelX = ($stateBufferArray[8]/255 + $stateBufferArray[9]/255/255) * 2 - 1,
-    $ballPos += $ballVelX * .05 / 3.5 + $initCameraOffset,
-    $initCameraOffset = 0,
+    $ballPos += $ballVelX * .05 / 3.5,
 
     $camFromBall += ($ballVelX / 3 - $camFromBall) / 99,
     $win && $win++ || (

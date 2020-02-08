@@ -44,7 +44,7 @@ float map(vec2 p)
     
     return seed > 0. && p.y + oa > 0.
         ? -1.
-        : min(p.x-.7*p.y-7., merge(merge(a,c),b));
+        : min(p.x-.7*p.y-3., merge(merge(a,c),b));
 }
 
 vec2 getNorm(vec2 p)
