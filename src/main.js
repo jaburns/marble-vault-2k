@@ -30,7 +30,7 @@ g.vertexAttribPointer(
 //
   // TODO  move all the RWs to be contiguous
 //  0 : g[0].x : W  : 100000 * canvas width + canvas height
-//  1 : g[0].y : RW : ball angle
+//    1 : g[0].y : W  : previous camera offset x
 //  2 : g[0].z : W  : key input flags & seed
 //  3 : g[0].w : W  : camera offset x
 //  4 : g[1].x : RW : upper pos.x (relative to camera)
@@ -41,7 +41,7 @@ g.vertexAttribPointer(
 //  9 : g[2].y : RW : lower vel.x
 // 10 : g[2].z : RW : upper vel.y
 // 11 : g[2].w : RW : lower vel.y
-// 12 : g[3].x : W  : previous camera offset x, R : reset
+//   12 : g[3].x : RW : ball angle
 // 13 : g[3].y : RW : ball angular velocity
 // 14 : g[3].z : RW : jump state flags
 // 15 : g[3].w : RW : jump grace counter
@@ -50,7 +50,7 @@ g.vertexAttribPointer(
 $seed = 0,
 
 $init = $a => (
-    $stateBufferArray = [128,1,0,0,128,1,128,1,255,1,192,1,0,100,0,0],
+    $stateBufferArray = [0,0,0,0,128,1,128,1,255,1,192,1,0,100,0,0],
     $stateBuffer = new Uint8Array(16),
     $win =
     $ballPos = 
@@ -84,7 +84,7 @@ setInterval($a => (
     $stateBufferArray = Array.from($stateBuffer),
     $stateBufferArray[0] = 1e5*(a.width = innerWidth) + (a.height = innerHeight),
     $stateBufferArray[2] = (!$win && $keys[39]|0 + 2*$keys[40]|0) + 4*$seed, // 39 = Right arrow, 40 = Down arrow
-    $stateBufferArray[12] = $cameraOffset,
+    $stateBufferArray[1] = $cameraOffset,
 
     $ballVelX = ($stateBufferArray[8]/255 + $stateBufferArray[9]/255/255) * 2 - 1,
     $ballPos += $ballVelX * .05 / 3.5,

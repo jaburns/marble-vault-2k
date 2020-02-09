@@ -174,14 +174,14 @@ void main()
     int boost   = int(mod(g[3].z,      4.));
     int counter = int(mod(g[3].w,      8.));
     shake       =   floor(g[3].w / 8.);
-    angle       = 6.28 * g[0].y / 255.;
+    angle       = 6.28 * g[3].x / 255.;
     omega       = 2. * g[3].y / 255. - 1.;
 
     vec2 coord = gl_FragCoord.xy;
     vec2 vel = vec2(readFloat(g[2].xy), readFloat(g[2].zw));
 
     pos = vec2(readFloat(g[1].xy), readFloat(g[1].zw));
-    pos.x += g[3].x;
+    pos.x += g[0].y;
     pos *= 3.5;
     seed = floor(g[0].z / 4.);
 
@@ -232,9 +232,11 @@ void main()
             if (boost < 2 && down == 1) {
                 boost = 2;
                 vel.y = -1.;
+                omega = 0.;
             }
             if (boost + 1 == right) { // if (boost == 0 && right == 1) {
                 boost = 1;
+                omega += .25; // better effeect TODO
                 vel.x += .5 - .5*vel.x;
             }
         }
@@ -243,14 +245,13 @@ void main()
         pos.x -= g[0].w;
 
         gl_FragColor =
-            coord.x < 1. ? vec4(0, fract(angle/6.28), 0, 0) : // g[0]   
             coord.x < 2. ? vec4(writeFloat(pos.x), writeFloat(pos.y)) : // g[1]
             coord.x < 3. ? vec4(writeFloat(vel.x), writeFloat(vel.y)) : // g[2]
-                vec4(// g[3]
-                    0,
-                    (omega+1.)/2.,
-                    float(boost)/255.,
-                    (float(counter)+8.*shake)/255.
-                );
+            vec4(  // g[3]
+                fract(angle/6.28),
+                (omega+1.)/2.,
+                float(boost)/255.,
+                (float(counter)+8.*shake)/255.
+            );
     }
 }
