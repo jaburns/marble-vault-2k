@@ -28,9 +28,8 @@ g.vertexAttribPointer(
 //
 //   JS/GLSL shared state buffer
 //
-  // TODO  move all the RWs to be contiguous
 //  0 : g[0].x : W  : 100000 * canvas width + canvas height
-//    1 : g[0].y : W  : previous camera offset x
+//  1 : g[0].y : W  : previous camera offset x
 //  2 : g[0].z : W  : key input flags & seed
 //  3 : g[0].w : W  : camera offset x
 //  4 : g[1].x : RW : upper pos.x (relative to camera)
@@ -41,7 +40,7 @@ g.vertexAttribPointer(
 //  9 : g[2].y : RW : lower vel.x
 // 10 : g[2].z : RW : upper vel.y
 // 11 : g[2].w : RW : lower vel.y
-//   12 : g[3].x : RW : ball angle
+// 12 : g[3].x : RW : ball angle
 // 13 : g[3].y : RW : ball angular velocity
 // 14 : g[3].z : RW : jump state flags
 // 15 : g[3].w : RW : jump grace counter
@@ -74,7 +73,7 @@ setInterval($a => (
             g.TRIANGLES,
             g.uniformMatrix4fv(
                 g.getUniformLocation($shader, 'g'),
-                g.viewport(0, 0, a.width, a.height), // Returns 0
+                g.viewport(0, 0, a.width = innerWidth, a.height = innerHeight), // Returns 0
                 $stateBufferArray
             ), // Returns 0
             3
@@ -82,23 +81,24 @@ setInterval($a => (
         0, 4, 1, g.RGBA, 5121, $stateBuffer // UNSIGNED_BYTE = 5121
     ), 
     $stateBufferArray = Array.from($stateBuffer),
-    $stateBufferArray[0] = 1e5*(a.width = innerWidth) + (a.height = innerHeight),
+    $stateBufferArray[0] = 1e5*a.width + a.height,
     $stateBufferArray[2] = (!$win && $keys[39]|0 + 2*$keys[40]|0) + 4*$seed, // 39 = Right arrow, 40 = Down arrow
     $stateBufferArray[1] = $cameraOffset,
 
     $ballVelX = ($stateBufferArray[8]/255 + $stateBufferArray[9]/255/255) * 2 - 1,
     $ballPos += $ballVelX * .05 / 3.5,
-
     $camFromBall += ($ballVelX / 3 - $camFromBall) / 99,
+
     $win && $win++ || (
         $cameraOffset = $camFromBall + $ballPos,
         $frames++,
-        $ballPos > 20 && ($win = 1)
+        $win = $ballPos > 20
     ),
+    $win > 180 && $init(),
+
     $stateBufferArray[3] = $cameraOffset,
 
     $keys[82] && $init(1), // R key to reset
-    $win > 180 && $init(),
 
     s.innerText = `Track#${$seed}#>#${$timeFormat($frames/3600)}:${$timeFormat($frames/60%60)}:${$timeFormat($frames/.6%100)}`
 ), 16)
