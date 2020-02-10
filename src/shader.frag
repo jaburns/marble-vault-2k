@@ -44,30 +44,12 @@ float map(vec2 p)
 {
     vec2 p1 = vec2(mod(p.x+.5, 1.)-.5, p.y);
 
-    float challenge = abs(seed/1e3);
-    float a = circle( p1 + vec2( 0, rand(p.x+ .5+9.)*(.9+challenge) -.5*challenge), .7 + .6*rand(p.x+ .5));
-    float b = circle( p1 + vec2(-1, rand(p.x+1.5+9.)*(.9+challenge) -.5*challenge), .7 + .6*rand(p.x+1.5));
-    float c = circle( p1 + vec2( 1, rand(p.x- .5+9.)*(.9+challenge) -.5*challenge), .7 + .6*rand(p.x- .5));
+    float a = circle( p1 + vec2( 0, rand(p.x+ .5+9.)*(.1+seed/7.) - seed/20.), .7 + .6*rand(p.x+ .5));
+    float b = circle( p1 + vec2(-1, rand(p.x+1.5+9.)*(.1+seed/7.) - seed/20.), .7 + .6*rand(p.x+1.5));
+    float c = circle( p1 + vec2( 1, rand(p.x- .5+9.)*(.1+seed/7.) - seed/20.), .7 + .6*rand(p.x- .5));
     
     return min(p.x-.7*p.y-3., merge(merge(a,c),b));
 }
-
-
-
-// float map(vec2 p)
-// {
-//     vec2 p1 = vec2(mod(p.x+.5, 1.)-.5, p.y);
-// 
-//     float challenge = abs(seed/1e3);
-//     float oa =                      rand(p.x+ .5+9.)*(.9+challenge);
-//     float a = length( p1 + vec2( 0,              oa                 -.5*challenge)) - .7 - .6*rand(p.x+ .5);
-//     float b = length( p1 + vec2(-1, rand(p.x+1.5+9.)*(.9+challenge) -.5*challenge)) - .7 - .6*rand(p.x+1.5);
-//     float c = length( p1 + vec2( 1, rand(p.x- .5+9.)*(.9+challenge) -.5*challenge)) - .7 - .6*rand(p.x- .5);
-//     
-//     return seed > 0. && p.y + oa > 0.
-//         ? -1.
-//         : min(p.x-.7*p.y-3., merge(merge(a,c),b));
-// }
 
 vec2 getNorm(vec2 p)
 {
@@ -112,7 +94,7 @@ vec3 draw(vec2 coord)
     vec2 dims = vec2(floor(g[0].x/1e5), mod(g[0].x,1e5));
     vec2 m = (coord - dims * .5) / dims.y;
 
-    float ga = fract(seed*.11);
+    float ga = fract(.2+seed*.1);
     float d = length(40.*m - vec2(15,7));
 
     vec3 sky = mix(
@@ -159,8 +141,7 @@ vec3 draw(vec2 coord)
             // If we're at the finish line, get the checkerboard color.
             if (i == 0. && uv.x > 19.8*3.5 && uv.x < 20.*3.5) {
                 uv = floor(10.*uv);
-                sky = vec3(.2+.8*mod(uv.x + uv.y, 2.));
-                break;
+                return vec3(.2+.8*mod(uv.x + uv.y, 2.));
             }
 
             // Add some curvature to the stripes.
@@ -168,7 +149,7 @@ vec3 draw(vec2 coord)
 
             // Get color of the stripes.
             vec3 stripes = colorFromHue(i == 0. ? ga : ga - .3)
-                * (1.-.05*abs(floor(mod(8.*(uv.x+2.-uv.y),4.))-2.))   // Stripe color
+                * (1.-.1*abs(floor(mod(8.*(uv.x+2.-uv.y),4.))-2.))   // Stripe color
                 * (.5 + r * (.2 + max(0.,dot(i_LIGHT_DIR, norm))));   // Lighting
 
             return mix(i_PURPLE, mix(stripes, i_BLUE, i*.3), .6);
@@ -182,11 +163,11 @@ vec3 draw(vec2 coord)
 
 void main()
 {
-    int up      = int(mod(g[0].z     , 2.));
-    int down    = int(mod(g[0].z / 2., 2.));
-    int counter = int(mod(g[3].w,      8.));
+    float up      = mod(g[0].z     , 2.);
+    float down    = floor(mod(g[0].z / 2., 2.));
+    float counter = mod(g[3].w,      8.);
     shake       =   floor(g[3].w / 8.);
-    angle       = 6.28 * g[3].x / 255.;
+    angle       = .0246 * g[3].x;         // 0.0246 = 6.28 / 255
     omega       = 2. * g[3].y / 255. - 1.;
 
     vec2 coord = gl_FragCoord.xy;
@@ -213,7 +194,7 @@ void main()
 
     if (coord.y < 1. && coord.x < 4.)
     {
-        vel.y -= .01;
+        vel.y -= .02;
         pos += .05 * vel;
 
         angle += omega;
@@ -222,35 +203,32 @@ void main()
         vec2 tang = vec2(norm.y, -norm.x);
         float depth = map(pos);
         float dotNormVel = dot(norm, vel);
-        float boost = g[3].z;
 
         if (shake > 0.) shake--;
 
         if (depth >= -.055) {
             if (dotNormVel < 0.) {
-                if (counter > 0) {
+                if (counter > 0.) {
                     shake = max(shake, 30. * min(-dotNormVel, 1.));
                 }
+
                 pos += norm * (depth + .055);
                 vel = dot(vel, tang) * tang;
 
                 omega = .6 * length(vel) * sign(vel.x*norm.y - vel.y*norm.x);
             }
-
-            if (up == 1) {
-                vel.y += .5;
-            }
-
-            counter = 0;
+            counter = 0.;
         } else {
-            if (counter < 7 && ++counter == 6) {
-                boost = 0.;
-            }
-            if (boost == 0. && down == 1) {
-                boost = 1.;
+            if (down > 0.) {
                 vel.y = -1.;
                 omega = 0.;
             }
+            if (counter < 7.) counter++;
+        }
+
+        if (counter < 7. && up > 0.) {
+            counter = 7.;
+            vel.y = max(.5,vel.y+.5);
         }
 
         pos /= 3.5;
@@ -262,8 +240,8 @@ void main()
             vec4(  // g[3]
                 fract(angle/6.28),
                 (omega+1.)/2.,
-                boost,
-                (float(counter)+8.*shake)/255.
+                0,
+                (counter+8.*shake)/255.
             );
     }
 }

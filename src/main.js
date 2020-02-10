@@ -42,28 +42,27 @@ g.vertexAttribPointer(
 // 11 : g[2].w : RW : lower vel.y
 // 12 : g[3].x : RW : ball angle
 // 13 : g[3].y : RW : ball angular velocity
-// 14 : g[3].z : RW : jump state flags
-// 15 : g[3].w : RW : jump grace counter
+// 14 : g[3].z :      unused
+// 15 : g[3].w : RW : jump grace counter +  8 * screen shake
 //
 
 $seed = 0,
 
 $init = $a => (
-    $stateBufferArray = [0,0,0,0,128,1,128,1,255,1,192,1,0,100,0,0],
-    $stateBuffer = new Uint8Array(16),
+    $stateBuffer = Uint8Array.from($stateBufferArray = [0,0,0,0,128,1,128,1,255,1,192,1,0,100,0,0]),
+    $keys =
     $win =
     $ballPos = 
     $frames = 
     $cameraOffset = 
     $camFromBall = 0,
-    $seed = $a?$seed:prompt(s.innerText+'\nTrack?',$seed+1)|0,
-    $keys = {}
+    $seed = $a?$seed:prompt(s.innerText+'\nTrack?#(1-10)',$seed+1)|0,
+    $seed = Math.min(10,Math.max(1,$seed))
 ),
 
 $init(),
 
-document.onkeydown = $a => $keys[$a.keyCode] = 1,
-document.onkeyup   = $a => $keys[$a.keyCode] = 0,
+document.onkeydown = $a => $keys[$a.keyCode] = !$a.repeat,
 
 $timeFormat = $a => ($a |= 0, $a > 9 ? $a : '0'+$a),
 
@@ -99,6 +98,7 @@ setInterval($a => (
     $stateBufferArray[3] = $cameraOffset,
 
     $keys[82] && $init(1), // R key to reset
+    $keys = {},
 
     s.innerText = `Track#${$seed}#-#${$timeFormat($frames/3600)}:${$timeFormat($frames/60%60)}:${$timeFormat($frames/.6%100)}`
 ), 16)
