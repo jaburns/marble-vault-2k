@@ -59,7 +59,6 @@ float roundMerge(float a, float b)
 float rand(float x)
 {
     return fract(sin(dot(vec2(track,floor(x)),vec2(11.,79.))) * 4e5);
-    //return fract(sin((track+99.*floor(x))*557.641));
 }
 
 // Signed distance function for the divot closest to p.x + b. Parameter p is in world space
@@ -71,7 +70,7 @@ float divot(vec2 p, float b)
     // Move in to the local space of the divot, offset vertically by some random amount
     p = vec2(
         abs( mod(p.x+.5,1.) - x ),
-        p.y + rand(p.x+b+9.)*(.1+track/7.) - track/20.
+        p.y + rand(p.x+b+9.)*track/5. - track/12.
     );
 
     // Uneven capsule distance function https://www.shadertoy.com/view/4lcBWn
