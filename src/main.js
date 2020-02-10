@@ -82,7 +82,7 @@ setInterval($a => (
     ), 
     $stateBufferArray = Array.from($stateBuffer),
     $stateBufferArray[0] = 1e5*a.width + a.height,
-    $stateBufferArray[2] = (!$win && $keys[39]|0 + 2*$keys[40]|0) + 4*$seed, // 39 = Right arrow, 40 = Down arrow
+    $stateBufferArray[2] = (!$win && $keys[38]|0 + 2*$keys[40]|0) + 4*$seed, // 38 = Up arrow, 40 = Down arrow
     $stateBufferArray[1] = $cameraOffset,
 
     $ballVelX = ($stateBufferArray[8]/255 + $stateBufferArray[9]/255/255) * 2 - 1,
@@ -100,5 +100,5 @@ setInterval($a => (
 
     $keys[82] && $init(1), // R key to reset
 
-    s.innerText = `Track#${$seed}#>#${$timeFormat($frames/3600)}:${$timeFormat($frames/60%60)}:${$timeFormat($frames/.6%100)}`
+    s.innerText = `Track#${$seed}#-#${$timeFormat($frames/3600)}:${$timeFormat($frames/60%60)}:${$timeFormat($frames/.6%100)}`
 ), 16)
