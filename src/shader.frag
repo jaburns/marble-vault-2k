@@ -1,9 +1,29 @@
+// ====================================================================================================================
+//   JS/GLSL shared state buffer
+// ====================================================================================================================
+//   array[ 0] : g[0].x : W  : 100000 * canvas width + canvas height
+//   array[ 1] : g[0].y : W  : previous camera offset x
+//   array[ 2] : g[0].z : W  : key input flags
+//   array[ 3] : g[0].w : W  : camera offset x
+//   array[ 4] : g[1].x : RW : upper pos.x (relative to camera)
+//   array[ 5] : g[1].y : RW : lower pos.x (relative to camera)
+//   array[ 6] : g[1].z : RW : upper pos.y (relative to camera)
+//   array[ 7] : g[1].w : RW : lower pos.y (relative to camera)
+//   array[ 8] : g[2].x : RW : upper vel.x
+//   array[ 9] : g[2].y : RW : lower vel.x
+//   array[10] : g[2].z : RW : upper vel.y
+//   array[11] : g[2].w : RW : lower vel.y
+//   array[12] : g[3].x : RW : ball angle
+//   array[13] : g[3].y : RW : ball angular velocity
+//   array[14] : g[3].z : W  : track number
+//   array[15] : g[3].w : RW : jump grace counter
+//
 uniform mat4 g;
 
-float track;  // Track number
-float angle;  // Rotation of the marble in radians
-float omega;  // Angular velocity in radians per tick
-vec2 pos;     // Position of the marble in world space
+float track; // Track number
+float angle; // Rotation of the marble in radians
+float omega; // Angular velocity in radians per tick
+vec2 pos;    // Position of the marble in world space
 
 // ====================================================================================================================
 // == State serialization
@@ -133,7 +153,7 @@ vec3 draw(vec2 coord)
     );
 
     // Translate to the camera position, and adjust camera scale and offset
-    m.x += g[0].w;
+    m.x += g[0].y;
     m *= 3.5;
     m.y -= .9;
 
