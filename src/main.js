@@ -70,7 +70,7 @@ $main = $a => (
     $stateBufferArray[14] = $track,
     $stateBufferArray[1] = $cameraOffset,
 
-    $ballVelX = ($stateBufferArray[8]/255 + $stateBufferArray[9]/255/255) * 2 - 1,
+    $ballVelX = 2*$stateBufferArray[8]/255 + 2*$stateBufferArray[9]/255/255 - 1,
     $ballPos += $ballVelX * .05 / 3.5,
     $camFromBall += ($ballVelX / 3 - $camFromBall) / 99,
 

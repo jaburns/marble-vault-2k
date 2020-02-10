@@ -16,13 +16,14 @@
 //   array[12] : g[3].x : RW : ball angle
 //   array[13] : g[3].y : RW : ball angular velocity
 //   array[14] : g[3].z : W  : track number
-//   array[15] : g[3].w : RW : jump grace counter
+//   array[15] : g[3].w : RW : jump grace counter + 8 * jump pulse counter
 //
 uniform mat4 g;
 
 float track; // Track number
 float angle; // Rotation of the marble in radians
 float omega; // Angular velocity in radians per tick
+float pulse; // Jump pulse effect counter
 vec2 pos;    // Position of the marble in world space
 
 // ====================================================================================================================
@@ -158,7 +159,7 @@ vec3 draw(vec2 coord)
     m.y -= .9;
 
     // Draw the marble
-    if (length(m-pos) < .06) {
+    if (length(m-pos) < .06 + .05*pulse*pulse/100.) {
         m -= pos;
         d = max((7.*length(m-vec2(.04))) + .9,0.);
         return dot(m, vec2(sin(angle), cos(angle))) > 0. ? vec3(1)/d/d : colorFromHue(groundHue+.5)/d/d;
@@ -214,7 +215,8 @@ void main()
 {
     const float i_KEYS = g[0].z;
 
-    float counter = g[3].w;
+    float counter = mod(g[3].w, 8.);
+    pulse = floor(g[3].w / 8.);
 
     angle = .0246 * g[3].x; // 0.0246 = 2 * pi / 255
     omega = 2. * g[3].y / 255. - 1.;
@@ -260,8 +262,11 @@ void main()
             if (counter < 7.) counter++;
         }
 
+        if (pulse > 0.) pulse--;
+
         if (counter < 7. && mod(i_KEYS, 2.) > 0.) {
             counter = 7.;
+            pulse = 10.;
             vel.y = max(.5,vel.y+.5);
         }
 
@@ -275,7 +280,7 @@ void main()
                 fract(angle/6.28),
                 (omega+1.)/2.,
                 0,
-                counter/255.
+                (counter + 8.*pulse)/255.
             );
     }
 }
