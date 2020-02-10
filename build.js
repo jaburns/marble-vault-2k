@@ -31,44 +31,6 @@ const minifyPrefixedIdentifiers = (prefix, js) => {
     return js;
 };
 
-const replaceMacros = code => {
-    const lines = code.split('\n').map(x => x.trim());
-    const outLines = [];
-
-    const macros = {};
-    let curMacroName = null;
-    let curMacroBody = '';
-
-    lines.forEach(line => {
-        if (curMacroName === null) {
-            const match = line.match(/__defMacro\(['"]([^'"]+)['"]/);
-            if (match) {
-                curMacroName = match[1];
-                curMacroBody = '';
-            } else {
-                outLines.push(line);
-            }
-        }
-        else if (line === ')') {
-            macros[curMacroName] = curMacroBody;
-            curMacroName = null;
-        }
-        else {
-            curMacroBody += line;
-        }
-    });
-
-    code = outLines.join('\n');
-
-    for (let k in macros) {
-        while (code.indexOf(k) >= 0) {
-            code = code.replace(k, macros[k]);
-        }
-    }
-
-    return code;
-};
-
 const getMinifiedShader = path => {
     const SHADER_MIN_TOOL = process.platform === 'win32' ? 'tools\\shader_minifier.exe' : 'mono tools/shader_minifier.exe';
     shell.exec(`${SHADER_MIN_TOOL} --preserve-externals --no-renaming-list main --format none ${path} -o tmp_out.glsl`);
@@ -98,20 +60,10 @@ const removeWhitespace = js => js
     .replace(/new/g, 'new ')
     .replace(/#/g, ' ');
 
-const addNewlines = (str, lineLength) => {
-    let result = '';
-    while (str.length > 0) {
-        result += str.substring(0, lineLength) + '\n';
-        str = str.substring(lineLength);
-    }
-    return result;
-}
-
 const main = () => {
     let js = fs.readFileSync(SRC_DIR + '/main.js', 'utf8');
 
     js = stripComments(js);
-    js = replaceMacros(js);
     js = removeWhitespace(js);
     js = insertShaders(js);
     js = minifyPrefixedIdentifiers('\\$', js);

@@ -56,7 +56,7 @@ $main = $a => (
             g.TRIANGLES,
             g.uniformMatrix4fv(
                 g.getUniformLocation($shader, `g`),
-                g.viewport(0, 0, (a.width = innerWidth)/devicePixelRatio, (a.height = innerHeight)/devicePixelRatio), // Returns 0
+                g.viewport(0, 0, a.width = innerWidth, a.height = innerHeight), // Returns 0
                 $stateBufferArray
             ), // Returns 0
             3
