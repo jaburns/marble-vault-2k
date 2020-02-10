@@ -5,7 +5,6 @@ $b = g.createShader(g.VERTEX_SHADER),
 g.shaderSource($b, $a),
 g.compileShader($b),
 g.attachShader($shader, $b),
-//console.log(g.getShaderInfoLog($b)),
 
 $a = __shader('shader.frag'),
 $b = g.createShader(g.FRAGMENT_SHADER),
@@ -43,28 +42,34 @@ g.vertexAttribPointer(
 // 12 : g[3].x : RW : ball angle
 // 13 : g[3].y : RW : ball angular velocity
 // 14 : g[3].z :      unused
-// 15 : g[3].w : RW : jump grace counter +  8 * screen shake
+// 15 : g[3].w : RW : jump grace counter
 //
 
+$timeFormat = $a => ($a |= 0, $a > 9 ? $a : '0'+$a),
+$scoreFormat = ($a,$b) => $b<1?'':`Track#${$b}#-#${$timeFormat($a/3600)}:${$timeFormat($a/60%60)}:${$timeFormat($a/.6%100)}`,
+
+$frames = 
 $seed = 0,
 
 $init = $a => (
     $stateBuffer = Uint8Array.from($stateBufferArray = [0,0,0,0,128,1,128,1,255,1,192,1,0,100,0,0]),
+    $seed = $a ? $seed : (
+        $best = localStorage.getItem($seed) || 1e6,
+        $frames < $best && localStorage.setItem($seed, $best = $frames),
+        prompt(`${$scoreFormat($best, $seed)}\nTrack?#(1-10)`,$seed+1)|0
+    ),
+    $seed = Math.min(10,Math.max(1,$seed)),
     $keys =
     $win =
     $ballPos = 
     $frames = 
     $cameraOffset = 
-    $camFromBall = 0,
-    $seed = $a?$seed:prompt(s.innerText+'\nTrack?#(1-10)',$seed+1)|0,
-    $seed = Math.min(10,Math.max(1,$seed))
+    $camFromBall = 0
 ),
 
 $init(),
 
 document.onkeydown = $a => $keys[$a.keyCode] = !$a.repeat,
-
-$timeFormat = $a => ($a |= 0, $a > 9 ? $a : '0'+$a),
 
 setInterval($a => (
     g.readPixels(
@@ -91,7 +96,7 @@ setInterval($a => (
     $win && $win++ || (
         $cameraOffset = $camFromBall + $ballPos,
         $frames++,
-        $win = $ballPos > 20
+        $win = $ballPos > 10
     ),
     $win > 180 && $init(),
 
@@ -100,5 +105,5 @@ setInterval($a => (
     $keys[82] && $init(1), // R key to reset
     $keys = {},
 
-    s.innerText = `Track#${$seed}#-#${$timeFormat($frames/3600)}:${$timeFormat($frames/60%60)}:${$timeFormat($frames/.6%100)}`
+    s.innerText = $scoreFormat($frames, $seed)
 ), 16)

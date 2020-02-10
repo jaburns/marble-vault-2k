@@ -1,13 +1,13 @@
 uniform mat4 g;
 
-float seed;
-float shake;
-float angle;
-float omega;
-vec2 pos;
+float track;  // Track number
+float angle;  // Rotation of the marble in radians
+float omega;  // Angular velocity in radians per tick
+vec2 pos;     // Position of the marble in world space
 
 // ====================================================================================================================
 
+// Given some float in the range [-1,1), encode it as a two-byte fixed-point number
 vec2 writeFloat(float a)
 {
     a = (a + 1.) / 2.;
@@ -17,6 +17,7 @@ vec2 writeFloat(float a)
     );
 }
 
+// Parse a two-byte fixed-point number in to a float in the range [-1,1)
 float readFloat(vec2 a)
 {
     return (a.x/255. + a.y/255./255.) * 2. - 1.;
@@ -24,33 +25,55 @@ float readFloat(vec2 a)
 
 // ====================================================================================================================
 
-float merge(float a, float b)
+// Merge two signed distances together while smoothing sharp edges in their negative space
+float roundMerge(float a, float b)
 {
     return -length(min(vec2(a, b), 0.)) + max(min(a, b), 0.);
 }
 
+// Gives some pseudorandom value in the range [0,1)
 float rand(float x)
 {
-    return fract(sin(dot(vec2(seed,floor(x)),vec2(11.,79.))) * 4e5);
+    return fract(sin(dot(vec2(track,floor(x)),vec2(11.,79.))) * 4e5);
 }
 
-float circle(vec2 p, float r)
+// Signed distance function for the divot closest to p.x + b. Parameter p is in world space
+float divot(vec2 p, float b)
 {
-    p.x = abs(p.x);
-    return dot(p,vec2(.3,.95)) < 0. ? length(p) - r : dot(p,vec2(.95,-.3)) - r;
+    // Pick a random radius for the divot
+    float r = .7 + .6*rand(p.x + b);
+
+    // Move in to the local space of the divot, offset vertically by some random amount
+    p = vec2(
+        abs( mod(p.x+.5,1.) - x ),
+        p.y + rand(p.x+b+9.)*(.1+track/7.) - track/20.
+    );
+
+    // Uneven capsule distance function https://www.shadertoy.com/view/4lcBWn
+    return dot(p, vec2(.3,.95)) < 0.
+        ? length(p) - r
+        : dot(p, vec2(.95,-.3)) - r;
 }
 
+// Total signed distance function for the world. Parameter p is in world space
 float map(vec2 p)
 {
-    vec2 p1 = vec2(mod(p.x+.5, 1.)-.5, p.y);
+    return min(
+        // Cliff at the start of the level
+        p.x - .7*p.y - 3., 
 
-    float a = circle( p1 + vec2( 0, rand(p.x+ .5+9.)*(.1+seed/7.) - seed/20.), .7 + .6*rand(p.x+ .5));
-    float b = circle( p1 + vec2(-1, rand(p.x+1.5+9.)*(.1+seed/7.) - seed/20.), .7 + .6*rand(p.x+1.5));
-    float c = circle( p1 + vec2( 1, rand(p.x- .5+9.)*(.1+seed/7.) - seed/20.), .7 + .6*rand(p.x- .5));
-    
-    return min(p.x-.7*p.y-3., merge(merge(a,c),b));
+        // The three closest divots to p
+        roundMerge(
+            roundMerge(
+                divot(p,  .5),
+                divot(p, -.5)
+            ),
+            divot(p, 1.5)
+        )
+    );
 }
 
+// Returns the world normal vector at some world space point p
 vec2 getNorm(vec2 p)
 {
     vec2 eps = vec2(1e-4, 0);
@@ -61,17 +84,13 @@ vec2 getNorm(vec2 p)
 
 // ====================================================================================================================
 
-// From https://www.shadertoy.com/view/XljGzV
-// vec3 hsl2rgb(vec3 c)
-// {
-//     return c.z+c.y*(clamp(abs(mod(c.x*6.+vec3(0,4,2),6.)-3.)-1.,0.,1.)-.5)*(1.-abs(2.*c.z-1.));
-// }
-vec3 colorFromHue(float x)
+// HSL to RGB function from https://www.shadertoy.com/view/XljGzV with hardcoded saturation and lightness.
+vec3 colorFromHue(float h)
 {
     return .45 + .51*(
         clamp(
             abs(
-                mod( fract(x) * 6. + vec3(0,4,2), 6.) - 3.
+                mod( fract(h) * 6. + vec3(0,4,2), 6.) - 3.
             ) - 1.,
             0.,
             1.
@@ -79,24 +98,20 @@ vec3 colorFromHue(float x)
     );
 }
 
+// Returns the screen color at the provided pixel coordinates
 vec3 draw(vec2 coord)
 {
-    const vec2 i_LIGHT_DIR = vec2(.9,.4);
-
     const vec3 i_PURPLE = vec3(.13,.16,.31);
     const vec3 i_PINK = vec3(.9,.42,.44);
     const vec3 i_YELLOW = vec3(1,.86,.39);
     const vec3 i_BLUE = vec3(.44,.69,1);
 
-    coord += shake * shake / 30. // 30 * (shake/30)^2
-        * vec2(rand(shake), rand(9.+shake));
-
     vec2 dims = vec2(floor(g[0].x/1e5), mod(g[0].x,1e5));
-    vec2 m = (coord - dims * .5) / dims.y;
+    vec2 m = (coord - dims * .5) / dims.y; // Normalized screen coordinates
 
-    float ga = fract(.2+seed*.1);
-    float d = length(40.*m - vec2(15,7));
-
+    float groundHue = fract(.2+track*.1);
+    float d = length(40.*m - vec2(15,7)); // Scaled distance to the sun
+    
     vec3 sky = mix(
         vec3(1),
         mix(
@@ -111,46 +126,52 @@ vec3 draw(vec2 coord)
         step(1.,d)
     );
 
+    // Translate to the camera position, and adjust camera scale and offset
     m.x += g[0].w;
     m *= 3.5;
     m.y -= .9;
 
+    // Draw the marble
     if (length(m-pos) < .06) {
         m -= pos;
         d = max((7.*length(m-vec2(.04))) + .9,0.);
-        return (dot(m,vec2(sin(angle),cos(angle))) > 0. ? vec3(1) : colorFromHue(ga+.5)) /d/d;
+        return dot(m, vec2(sin(angle), cos(angle))) > 0. ? vec3(1)/d/d : colorFromHue(groundHue+.5)/d/d;
     } 
 
-    for (float i = 0.; i < 3.; i++) {
+    // Draw the three mountain layers from front to back
+    for (float i = 0.; i < 3.; i++)
+    {
         // uv = 1.*m - 0.*vec2(g[0].w-99.,-.2)
         // uv = 2.*m - 3.*vec2(g[0].w-99.,-.1)
         // uv = 4.*m - 8.*vec2(g[0].w-99.,  0)
         vec2 uv = pow(2.,i)*m - (pow(i+1.,2.)-1.) * vec2(g[0].w-99.,.1*i-.2);
         vec2 norm = getNorm(uv);
-
         d = map(uv);
 
-        if (d > 0.) {
-            d *= i > 0. ? .5 : 2.;
+        if (d > 0.)
+        {
+            // Make the edging effect deeper on the background layers
+            d *= i == 0. ? 2. : .5;
+
             d = min(1., d);
             float r = 1. - sqrt(2.*d - d*d); 
 
-            // Curve the lookup coordinates around the edge of the surface.
-            uv += (i > 0. ? 1. : .5)*vec2(-r,r);
+            // Curve the lookup coordinates around the edge of the surface
+            uv += (i == 0. ? .5 : 1.)*vec2(-r,r);
 
-            // If we're at the finish line, get the checkerboard color.
-            if (i == 0. && uv.x > 19.8*3.5 && uv.x < 20.*3.5) {
+            // If we're at the finish line, get the checkerboard color
+            if (i == 0. && uv.x > 9.8*3.5 && uv.x < 10.*3.5) {
                 uv = floor(10.*uv);
                 return vec3(.2+.8*mod(uv.x + uv.y, 2.));
             }
 
-            // Add some curvature to the stripes.
+            // Add some curvature to the stripes
             uv += .8*sin(.9*uv.yx);
 
-            // Get color of the stripes.
-            vec3 stripes = colorFromHue(i == 0. ? ga : ga - .3)
+            // Get color of the stripes
+            vec3 stripes = colorFromHue(i == 0. ? groundHue : groundHue - .3)
                 * (1.-.1*abs(floor(mod(8.*(uv.x+2.-uv.y),4.))-2.))   // Stripe color
-                * (.5 + r * (.2 + max(0.,dot(i_LIGHT_DIR, norm))));   // Lighting
+                * (.5 + r * (.2 + max(0.,dot(vec2(.8,.6), norm))));   // Lighting
 
             return mix(i_PURPLE, mix(stripes, i_BLUE, i*.3), .6);
         }
@@ -165,10 +186,10 @@ void main()
 {
     float up      = mod(g[0].z     , 2.);
     float down    = floor(mod(g[0].z / 2., 2.));
-    float counter = mod(g[3].w,      8.);
-    shake       =   floor(g[3].w / 8.);
-    angle       = .0246 * g[3].x;         // 0.0246 = 6.28 / 255
-    omega       = 2. * g[3].y / 255. - 1.;
+    float counter = g[3].w;
+
+    angle = .0246 * g[3].x; // 0.0246 = 6.28 / 255
+    omega = 2. * g[3].y / 255. - 1.;
 
     vec2 coord = gl_FragCoord.xy;
     vec2 vel = vec2(readFloat(g[2].xy), readFloat(g[2].zw));
@@ -176,45 +197,31 @@ void main()
     pos = vec2(readFloat(g[1].xy), readFloat(g[1].zw));
     pos.x += g[0].y;
     pos *= 3.5;
-    seed = floor(g[0].z / 4.);
 
-// Rendering
+    track = floor(g[0].z / 4.);
 
-    gl_FragColor = vec4(
-        (
-              draw(coord+vec2(-.375, .125))
-            + draw(coord+vec2(-.125,-.375))
-            + draw(coord+vec2( .125, .375))
-            + draw(coord+vec2( .375,-.125))
-        ) / 4.,
-        1
-    );
+    // Get the screen color for this pixel with 4x MSAA
+    gl_FragColor = vec4((
+        draw(coord+vec2(-.375, .125))
+      + draw(coord+vec2(-.125,-.375))
+      + draw(coord+vec2( .125, .375))
+      + draw(coord+vec2( .375,-.125))
+    ) / 4., 1);
 
-// State update
-
+    // If we're in the bottom left, update the game state and write the updated game state pixels
     if (coord.y < 1. && coord.x < 4.)
     {
         vel.y -= .02;
         pos += .05 * vel;
-
         angle += omega;
 
         vec2 norm = getNorm(pos);
         vec2 tang = vec2(norm.y, -norm.x);
-        float depth = map(pos);
-        float dotNormVel = dot(norm, vel);
 
-        if (shake > 0.) shake--;
-
-        if (depth >= -.055) {
-            if (dotNormVel < 0.) {
-                if (counter > 0.) {
-                    shake = max(shake, 30. * min(-dotNormVel, 1.));
-                }
-
-                pos += norm * (depth + .055);
+        if (map(pos) >= -.055) {
+            if (dot(norm, vel) < 0.) {
+                pos += norm * (map(pos) + .055);
                 vel = dot(vel, tang) * tang;
-
                 omega = .6 * length(vel) * sign(vel.x*norm.y - vel.y*norm.x);
             }
             counter = 0.;
@@ -241,7 +248,7 @@ void main()
                 fract(angle/6.28),
                 (omega+1.)/2.,
                 0,
-                (counter+8.*shake)/255.
+                counter/255.
             );
     }
 }
