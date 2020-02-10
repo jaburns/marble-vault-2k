@@ -192,12 +192,13 @@ vec3 draw(vec2 coord)
 
 void main()
 {
-    float up      = mod(g[0].z     , 2.);
-    float down    = floor(mod(g[0].z / 2., 2.));
+    const float i_KEYS = g[0].z;
+
     float counter = g[3].w;
 
-    angle = .0246 * g[3].x; // 0.0246 = 6.28 / 255
+    angle = .0246 * g[3].x; // 0.0246 = 2 * pi / 255
     omega = 2. * g[3].y / 255. - 1.;
+    track = g[3].z;
 
     vec2 coord = gl_FragCoord.xy;
     vec2 vel = vec2(readFloat(g[2].xy), readFloat(g[2].zw));
@@ -205,8 +206,6 @@ void main()
     pos = vec2(readFloat(g[1].xy), readFloat(g[1].zw));
     pos.x += g[0].y;
     pos *= 3.5;
-
-    track = floor(g[0].z / 4.);
 
     // Get the screen color for this pixel with 4x MSAA
     gl_FragColor = vec4((
@@ -234,14 +233,14 @@ void main()
             }
             counter = 0.;
         } else {
-            if (down > 0.) {
+            if (i_KEYS > 1.) {
                 vel.y = -1.;
                 omega = 0.;
             }
             if (counter < 7.) counter++;
         }
 
-        if (counter < 7. && up > 0.) {
+        if (counter < 7. && mod(i_KEYS, 2.) > 0.) {
             counter = 7.;
             vel.y = max(.5,vel.y+.5);
         }

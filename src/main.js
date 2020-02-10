@@ -86,7 +86,8 @@ setInterval($a => (
     ), 
     $stateBufferArray = Array.from($stateBuffer),
     $stateBufferArray[0] = 1e5*a.width + a.height,
-    $stateBufferArray[2] = (!$win && $keys[38]|0 + 2*$keys[40]|0) + 4*$seed, // 38 = Up arrow, 40 = Down arrow
+    $stateBufferArray[2] = !$win && $keys[38]|0 + 2*$keys[40]|0, // 38 = Up arrow, 40 = Down arrow
+    $stateBufferArray[14] = $seed,
     $stateBufferArray[1] = $cameraOffset,
 
     $ballVelX = ($stateBufferArray[8]/255 + $stateBufferArray[9]/255/255) * 2 - 1,
