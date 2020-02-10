@@ -50,40 +50,51 @@ $init(),
 
 document.onkeydown = $a => $keys[$a.keyCode] = !$a.repeat,
 
-setInterval($a => (
-    g.readPixels(
-        g.drawArrays(
-            g.TRIANGLES,
-            g.uniformMatrix4fv(
-                g.getUniformLocation($shader, `g`),
-                g.viewport(0, 0, a.width = innerWidth, a.height = innerHeight), // Returns 0
-                $stateBufferArray
+$then = Date.now(),
+
+$mainLoop = $a => (
+    $a = Date.now(),
+    //($a - $then > 10) && (
+    (
+        $then = $a,
+
+        g.readPixels(
+            g.drawArrays(
+                g.TRIANGLES,
+                g.uniformMatrix4fv(
+                    g.getUniformLocation($shader, `g`),
+                    g.viewport(0, 0, a.width = innerWidth, a.height = innerHeight), // Returns 0
+                    $stateBufferArray
+                ), // Returns 0
+                3
             ), // Returns 0
-            3
-        ), // Returns 0
-        0, 4, 1, g.RGBA, 5121, $stateBuffer // UNSIGNED_BYTE = 5121
-    ), 
+            0, 4, 1, g.RGBA, 5121, $stateBuffer // UNSIGNED_BYTE = 5121
+        ), 
 
-    $stateBufferArray = Array.from($stateBuffer),
-    $stateBufferArray[0] = 1e5*a.width + a.height,
-    $stateBufferArray[2] = !$win && $keys[38]|0 + 2*$keys[40]|0, // 38 = up arrow, 40 = down arrow
-    $stateBufferArray[14] = $track,
-    $stateBufferArray[1] = $cameraOffset,
+        $stateBufferArray = Array.from($stateBuffer),
+        $stateBufferArray[0] = 1e5*a.width + a.height,
+        $stateBufferArray[2] = !$win && $keys[38]|0 + 2*$keys[40]|0, // 38 = up arrow, 40 = down arrow
+        $stateBufferArray[14] = $track,
+        $stateBufferArray[1] = $cameraOffset,
 
-    $ballVelX = ($stateBufferArray[8]/255 + $stateBufferArray[9]/255/255) * 2 - 1,
-    $ballPos += $ballVelX * .05 / 3.5,
-    $camFromBall += ($ballVelX / 3 - $camFromBall) / 99,
+        $ballVelX = ($stateBufferArray[8]/255 + $stateBufferArray[9]/255/255) * 2 - 1,
+        $ballPos += $ballVelX * .05 / 3.5,
+        $camFromBall += ($ballVelX / 3 - $camFromBall) / 99,
 
-    $win && $win++ || (
-        $cameraOffset = $camFromBall + $ballPos,
-        $frames++,
-        $win = $ballPos > 10
+        $win && $win++ || (
+            $cameraOffset = $camFromBall + $ballPos,
+            $frames++,
+            $win = $ballPos > 10
+        ),
+        $win > 180 && $init(),
+
+        $stateBufferArray[3] = $cameraOffset,
+        $keys[82] && $init(1), // R key to reset
+        $keys = {},
+
+        s.innerText = $scoreFormat($frames, `Track#` + $track)
     ),
-    $win > 180 && $init(),
+    requestAnimationFrame($mainLoop)
+),
 
-    $stateBufferArray[3] = $cameraOffset,
-    $keys[82] && $init(1), // R key to reset
-    $keys = {},
-
-    s.innerText = $scoreFormat($frames, `Track#` + $track)
-), 16)
+$mainLoop()
