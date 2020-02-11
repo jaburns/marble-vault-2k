@@ -58,7 +58,7 @@ float roundMerge(float a, float b)
 // For every integer x, this gives some pseudorandom value in the range [0,1)
 float rand(float x)
 {
-    return fract(sin(track+11.*floor(x+11.)) * 1235.);
+    return fract(sin(track+13.*floor(x+13.)) * 13.);
 
 //  x = track + 11.*floor(x+11.);
 //  x *= 113.527;
