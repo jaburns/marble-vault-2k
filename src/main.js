@@ -11,7 +11,7 @@ $b = g.createShader(g.FRAGMENT_SHADER),
 g.shaderSource($b, $a),
 g.compileShader($b),
 g.attachShader($shader, $b),
-//console.log(g.getShaderInfoLog($b)),
+console.log(g.getShaderInfoLog($b)),
 
 g.vertexAttribPointer(
     g.linkProgram($shader),
@@ -26,6 +26,7 @@ $timeFormat = $a => ($a |= 0, $a > 9 ? $a : `0`+$a),
 $scoreFormat = ($a, $b, g) => g ? ``
     : $b+`#-#${$timeFormat($a/3600)}:${$timeFormat($a/60%60)}:${$timeFormat($a/.6%100)}`,
 
+$record =
 $frames = 
 $track = 0,
 
@@ -33,17 +34,20 @@ $init = $a => (
     $stateBuffer = Uint8Array.from($stateBufferArray = [0,0,0,0,128,1,128,1,255,1,192,1,0,100,0,0]),
 
     $track = Math.min(10, Math.max(1, $a ? $track : (
-        $best = localStorage.getItem($track) || 1e9,
-        $frames < $best && localStorage.setItem($track, $best = $frames),
-        prompt($scoreFormat($best, `Best`, !$track) + `\nTrack?#(1-10)`, $track + 1) | 0
+        $best = JSON.parse(localStorage.getItem($track) || `[1e9,[]]`),
+        $frames < $best[0] && localStorage.setItem($track, JSON.stringify($best = [$frames, $record])),
+        prompt($scoreFormat($best[0], `Best`, !$track) + `\nTrack?#(1-10)`, $track + 1) | 0
     ))),
 
+    $record = [],
     $keys =
     $win =
     $ballPos = 
     $frames = 
     $cameraOffset = 
-    $camFromBall = 0
+    $camFromBall = 0,
+
+    $best = JSON.parse(localStorage.getItem($track) || `[1e9,[]]`)
 ),
 
 $init(),
@@ -51,14 +55,17 @@ $init(),
 document.onkeydown = $a => $keys[$a.keyCode] = !$a.repeat,
 
 $main = $a => (
+    g.viewport(0, 0, a.width = innerWidth, a.height = innerHeight),
+
+    console.log(Array.isArray($best[1]) ? $best[1][0] : ''),
+
+    g.uniformMatrix4fv(g.getUniformLocation($shader, `g`), 0, $stateBufferArray),
+    g.uniform2fv(g.getUniformLocation($shader, `z`), Array.isArray($best[1]) ? $best[1].shift() : [0,0]),
+
     g.readPixels(
         g.drawArrays(
             g.TRIANGLES,
-            g.uniformMatrix4fv(
-                g.getUniformLocation($shader, `g`),
-                g.viewport(0, 0, a.width = innerWidth, a.height = innerHeight), // Returns 0
-                $stateBufferArray
-            ), // Returns 0
+            0,
             3
         ), // Returns 0
         0, 4, 1, g.RGBA, 5121, $stateBuffer // UNSIGNED_BYTE = 5121
@@ -73,6 +80,11 @@ $main = $a => (
     $ballVelX = ($stateBufferArray[8]/255 + $stateBufferArray[9]/255/255) * 2 - 1,
     $ballPos += $ballVelX * .05 / 3.5,
     $camFromBall += ($ballVelX / 3 - $camFromBall) / 99,
+
+    $record.push([
+        ($stateBufferArray[4]/255 + $stateBufferArray[5]/255/255) * 2 - 1 + $cameraOffset,
+        ($stateBufferArray[6]/255 + $stateBufferArray[7]/255/255) * 2 - 1
+    ]),
 
     $win && $win++ || (
         $cameraOffset = $camFromBall + $ballPos,

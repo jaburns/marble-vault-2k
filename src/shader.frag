@@ -7,8 +7,8 @@
 //   array[ 3] : g[0].w : W  : camera offset x
 //   array[ 4] : g[1].x : RW : upper pos.x (relative to camera)
 //   array[ 5] : g[1].y : RW : lower pos.x (relative to camera)
-//   array[ 6] : g[1].z : RW : upper pos.y (relative to camera)
-//   array[ 7] : g[1].w : RW : lower pos.y (relative to camera)
+//   array[ 6] : g[1].z : RW : upper pos.y
+//   array[ 7] : g[1].w : RW : lower pos.y
 //   array[ 8] : g[2].x : RW : upper vel.x
 //   array[ 9] : g[2].y : RW : lower vel.x
 //   array[10] : g[2].z : RW : upper vel.y
@@ -24,6 +24,7 @@ float track; // Track number
 float angle; // Rotation of the marble in radians
 float omega; // Angular velocity in radians per tick
 vec2 pos;    // Position of the marble in world space
+vec2 ghost;  // Position of the ghost in world space
 
 // ====================================================================================================================
 // == State serialization
@@ -157,6 +158,8 @@ vec3 draw(vec2 coord)
     m *= 3.5;
     m.y -= .9;
 
+    vec3 ghost = vec3(length(m - 3.5*z) < .06 ? .1 : 0.);
+
     // Draw the marble
     if (length(m-pos) < .06) {
         m -= pos;
@@ -188,7 +191,7 @@ vec3 draw(vec2 coord)
             // If we're at the finish line, get the checkerboard color
             if (i == 0. && uv.x > 9.8*3.5 && uv.x < 10.*3.5) {
                 uv = floor(10.*uv);
-                return vec3(.2+.8*mod(uv.x + uv.y, 2.));
+                return ghost + vec3(.2+.8*mod(uv.x + uv.y, 2.));
             }
 
             // Add some curvature to the stripes
@@ -199,11 +202,11 @@ vec3 draw(vec2 coord)
                 * (1.-.1*abs(floor(mod(8.*(uv.x+2.-uv.y),4.))-2.))   // Stripe color
                 * (.5 + r * (.2 + max(0.,dot(vec2(.8,.6), norm))));   // Lighting
 
-            return mix(i_PURPLE, mix(stripes, i_BLUE, i*.3), .6);
+            return ghost + mix(i_PURPLE, mix(stripes, i_BLUE, i*.3), .6);
         }
     }
 
-    return sky;
+    return ghost + sky;
 }
 
 // ====================================================================================================================
