@@ -6,6 +6,7 @@
     "x": "regpack tmp_in.js"
   },
   "devDependencies": {
+    "express": "^4.17.1",
     "lodash": "4.17.15",
     "regpack": "Siorki/RegPack",
     "shelljs": "0.8.3"
