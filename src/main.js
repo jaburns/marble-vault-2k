@@ -48,9 +48,12 @@ $init = $a => (
 
 $init(),
 
-// itch.io build requires this preventDefault to not scroll the whole page while you're playing.
+//!plus
 document.onkeydown = $a => ($keys[$a.keyCode] = !$a.repeat, $a.preventDefault()),
-//document.onkeydown = $a => $keys[$a.keyCode] = !$a.repeat,
+//!end
+//!2k
+document.onkeydown = $a => $keys[$a.keyCode] = !$a.repeat,
+//!end
 
 $main = $a => (
     g.readPixels(
@@ -92,3 +95,13 @@ $main = $a => (
     requestAnimationFrame($main)
 ),
 $main()
+
+//!plus
+;
+sound = new Howl({
+  src: ['music.mp3'],
+  autoplay: true,
+  loop: true,
+});
+sound.play();
+//!end

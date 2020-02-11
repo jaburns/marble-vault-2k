@@ -4,11 +4,40 @@ const _ = require('lodash');
 
 const ZIP_NAME = 'marble-vault-2k-jam-submission.zip';
 const SRC_DIR = 'src';
+const MODE = process.argv[2] === 'plus' ? 'plus' : '2k';
 
 const FLAGS = {
     useRegPack: true,
     decompressRegPack: true,
 };
+
+const applyBuildRegions = source => {
+    const result = [];
+    let reading = true;
+
+    source
+        .split('\n')
+        .map(x => x.trim())
+        .forEach(line => {
+            if (line.startsWith('//!')) {
+                if (line === '//!end') {
+                    reading = true;
+                }
+                else if (line !== '//!'+MODE) {
+                    reading = false;
+                }
+            } else {
+                if (reading) result.push(line);
+            }
+        });
+
+    return result.join('\n');
+};
+
+const minifyHTML = html => html
+    .split('\n')
+    .map(x => x.trim())
+    .join('');
 
 const shortVarNames = _.range(10, 36)
     .map(x => x.toString(36))
@@ -33,8 +62,11 @@ const minifyPrefixedIdentifiers = (prefix, js) => {
 };
 
 const getMinifiedShader = path => {
+    const inputShader = applyBuildRegions(fs.readFileSync(path, 'utf8'));
+    fs.writeFileSync('tmp_in.glsl', inputShader);
+
     const SHADER_MIN_TOOL = process.platform === 'win32' ? 'tools\\shader_minifier.exe' : 'mono tools/shader_minifier.exe';
-    shell.exec(`${SHADER_MIN_TOOL} --preserve-externals --no-renaming-list main --format none ${path} -o tmp_out.glsl`);
+    shell.exec(`${SHADER_MIN_TOOL} --preserve-externals --no-renaming-list main --format none tmp_in.glsl -o tmp_out.glsl`);
     const result = fs.readFileSync('tmp_out.glsl', 'utf8');
     
     if (path.endsWith('.frag')) {
@@ -64,6 +96,7 @@ const removeWhitespace = js => js
 const main = () => {
     let js = fs.readFileSync(SRC_DIR + '/main.js', 'utf8');
 
+    js = applyBuildRegions(js);
     js = stripComments(js);
     js = removeWhitespace(js);
     js = insertShaders(js);
@@ -98,7 +131,7 @@ const main = () => {
         }
     }
 
-    const shimHTML = fs.readFileSync(SRC_DIR + '/index.html', 'utf8');
+    const shimHTML = minifyHTML(applyBuildRegions(fs.readFileSync(SRC_DIR + '/index.html', 'utf8')));
 
     shell.mkdir('-p', 'docs');
 

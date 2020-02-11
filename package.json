@@ -2,8 +2,9 @@
   "name": "2kplusjam2020",
   "private": true,
   "scripts": {
-    "pack": "node build.js",
-    "x": "regpack tmp_in.js"
+    "start": "node test-server.js",
+    "2k": "node build.js 2k",
+    "plus": "node build.js plus"
   },
   "devDependencies": {
     "express": "^4.17.1",

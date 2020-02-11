@@ -159,12 +159,14 @@ vec3 draw(vec2 coord)
     m *= 3.5;
     m.y -= .9;
 
+
     // Draw the marble
     if (length(m-pos) < .06) {
         m -= pos;
         d = max((7.*length(m-vec2(.04))) + .9,0.);
         return dot(m, vec2(sin(angle), cos(angle))) > 0. ? vec3(1)/d/d : colorFromHue(groundHue+.5)/d/d;
     } 
+
 
     // Draw the three mountain layers from front to back
     for (float i = 0.; i < 3.; i++)
@@ -280,4 +282,11 @@ void main()
                 counter/255.
             );
     }
+
+//!plus
+    if (coord.y < 1. && coord.x >= 4. && coord.x < 5.) {
+        gl_FragColor = vec4(1,0,1,1);
+    }
+//!end
+
 }
