@@ -58,20 +58,7 @@ float roundMerge(float a, float b)
 // For every integer x, this gives some pseudorandom value in the range [0,1)
 float rand(float x)
 {
-    return fract(sin(track+13.*floor(x+13.)) * 13.);
-
-//  x = track + 11.*floor(x+11.);
-//  x *= 113.527;
-//  float triangle
-//  return mod(x,2.) > 1. ? fract(x) : 1.-fract(x);
-
-    // x = track + 99.*floor(x);
-    // x = fract(x * .1031);
-    // x *= x + 33.33;
-    // x *= x + x;
-    // return fract(x);
-
-    //return fract(sin(dot(vec2(track,floor(x)),vec2(11.,79.))) * 4e5);
+    return fract(sin(track+11.*floor(x+11.)) * (22.+track));
 }
 
 // Signed distance function for the divot closest to p.x + b. Parameter p is in world space
@@ -83,7 +70,7 @@ float divot(vec2 p, float b)
     // Move in to the local space of the divot, offset vertically by some random amount
     p = vec2(
         abs( mod(p.x+.5,1.) - x ),
-        p.y + rand(p.x+b+9.)*track/5. - track/12.
+        p.y + rand(p.x+b+9.)*track/7. + .5 - track/10.
     );
 
     // Uneven capsule distance function https://www.shadertoy.com/view/4lcBWn
