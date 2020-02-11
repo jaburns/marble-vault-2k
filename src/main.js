@@ -49,9 +49,8 @@ $init = $a => (
 $init(),
 
 // itch.io build requires this preventDefault to not scroll the whole page while you're playing.
-//document.onkeydown = $a => ($keys[$a.keyCode] = !$a.repeat, $a.preventDefault()),
-
-document.onkeydown = $a => $keys[$a.keyCode] = !$a.repeat,
+document.onkeydown = $a => ($keys[$a.keyCode] = !$a.repeat, $a.preventDefault()),
+//document.onkeydown = $a => $keys[$a.keyCode] = !$a.repeat,
 
 $main = $a => (
     g.readPixels(

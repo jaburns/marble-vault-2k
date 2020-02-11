@@ -2,6 +2,7 @@ const shell = require('shelljs');
 const fs = require('fs');
 const _ = require('lodash');
 
+const ZIP_NAME = 'marble-vault-2k-jam-submission.zip';
 const SRC_DIR = 'src';
 
 const FLAGS = {
@@ -108,10 +109,10 @@ const main = () => {
     );
     
     shell.cd('docs');
-    shell.exec('..\\tools\\advzip.exe -q -a -4 ../bundle.zip a.html');
+    shell.exec('..\\tools\\advzip.exe -q -a -4 ../'+ZIP_NAME+' a.html');
     shell.cd('..');
 
-    console.log('Zipped: ' + fs.statSync('bundle.zip').size + ' / 2048');
+    console.log('Zipped: ' + fs.statSync(ZIP_NAME).size + ' / 2048');
     console.log('');
     
     shell.rm('-rf', 'tmp*.*');
