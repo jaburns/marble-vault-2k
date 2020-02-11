@@ -132,21 +132,23 @@ vec3 draw(vec2 coord)
     const vec3 i_YELLOW = vec3(1,.86,.39);
     const vec3 i_BLUE = vec3(.44,.69,1);
 
+    bool dusk = mod(track, 2.) < 1.;
+
     vec2 dims = vec2(floor(g[0].x/1e5), mod(g[0].x,1e5));
     vec2 m = (coord - dims * .5) / dims.y; // Normalized screen coordinates
 
     float groundHue = fract(.2+track*.1);
-    float d = length(40.*m - vec2(15,7)); // Scaled distance to the sun
+    float d = length(40.*m - (dusk ? vec2(15,7) : vec2(15))); // Scaled distance to the sun
     
     vec3 sky = mix(
         vec3(1),
         mix(
-            i_YELLOW,
-            mix(
+            dusk ? i_YELLOW : vec3(1),
+            dusk ? mix(
                 i_PURPLE,
                 i_PINK,
                 1.-2.*m.y
-            ),
+            ) : i_BLUE,
             1.-exp(-.2*d)
         ),
         step(1.,d)
@@ -199,7 +201,7 @@ vec3 draw(vec2 coord)
                 * (1.-.1*abs(floor(mod(8.*(uv.x+2.-uv.y),4.))-2.))   // Stripe color
                 * (.5 + r * (.2 + max(0.,dot(vec2(.8,.6), norm))));   // Lighting
 
-            return mix(i_PURPLE, mix(stripes, i_BLUE, i*.3), .6);
+            return mix(i_PURPLE, mix(stripes, i_BLUE, i*.3), dusk ? .6 : 1.);
         }
     }
 
