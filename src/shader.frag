@@ -58,7 +58,20 @@ float roundMerge(float a, float b)
 // For every integer x, this gives some pseudorandom value in the range [0,1)
 float rand(float x)
 {
-    return fract(sin(dot(vec2(track,floor(x)),vec2(11.,79.))) * 4e5);
+    return fract(sin(track+11.*floor(x+11.)) * 1235.);
+
+//  x = track + 11.*floor(x+11.);
+//  x *= 113.527;
+//  float triangle
+//  return mod(x,2.) > 1. ? fract(x) : 1.-fract(x);
+
+    // x = track + 99.*floor(x);
+    // x = fract(x * .1031);
+    // x *= x + 33.33;
+    // x *= x + x;
+    // return fract(x);
+
+    //return fract(sin(dot(vec2(track,floor(x)),vec2(11.,79.))) * 4e5);
 }
 
 // Signed distance function for the divot closest to p.x + b. Parameter p is in world space
