@@ -50,9 +50,7 @@ g.vertexAttribPointer(
     g.bufferData($a, Uint8Array.of(1, 1, 1, 128, 128, 1), $a + 82) // ARRAY_BUFFER + 82 = STATIC_DRAW; 128 = -127
 ),
 
-$timeFormat = $a => ($a |= 0, $a > 9 ? $a : `0`+$a),
-$scoreFormat = ($a, $b, g) => g ? ``
-    : $b+`#-#${$timeFormat($a/3600)}:${$timeFormat($a/60%60)}:${$timeFormat($a/.6%100)}`,
+$scoreFormat = ($a, $b) => 'Track#' + $b + ':#' + ($a/60|0) + '.' + ($a=$a/.6%100|0, $a>9?$a:'0'+$a),
 
 $frames = 
 $track = 0,
@@ -61,9 +59,15 @@ $init = $a => (
     $stateBuffer = Uint8Array.from($stateBufferArray = [0,0,0,0,128,1,128,1,255,1,192,1,0,100,0,0]),
 
     $track = Math.min(10, Math.max(1, $a ? $track : (
-        $best = localStorage.getItem($track) || 1e9,
+        $best = localStorage.getItem($track) || 5940,
         $frames < $best && localStorage.setItem($track, $best = $frames),
-        prompt($scoreFormat($best, `Best`, !$track) + `\nTrack?#(1-10)`, $track + 1) | 0
+        prompt(
+            Array(10).fill().map(($a,$b) =>
+                $scoreFormat(localStorage.getItem($b+1) || 5940, $b+1)
+                + ($b%2 ? '\n' : '#####')
+            ).join(''),
+            $track + 1
+        ) | 0
     ))),
 
     $keys =
@@ -88,7 +92,7 @@ $main = $a => (
         g.drawArrays(
             g.TRIANGLES,
             g.uniformMatrix4fv(
-                g.getUniformLocation($shader, `g`),
+                g.getUniformLocation($shader, 'g'),
                 g.viewport(0, 0, a.width = innerWidth, a.height = innerHeight), // Returns 0
                 $stateBufferArray
             ), // Returns 0
@@ -121,7 +125,7 @@ $main = $a => (
     $keys[82] && $init(1), // R key to reset
     $keys = {},
 
-    s.innerText = $scoreFormat($frames, `Track#` + $track),
+    s.innerText = $scoreFormat($frames, $track),
 
     //!plus
     g.readPixels(4, 0, 1, 1, g.RGBA, 5121, plus_soundPixel),
