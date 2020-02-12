@@ -152,20 +152,18 @@ $main = $a => (
             plus_lastFrameTime = plus_nuFrameTime,
 
             plus_frameTimeBuffer.length > 30 && (
-                plus_FPS = plus_frameTimeBuffer.reduce((a, x) => a + x) / plus_frameTimeBuffer.length,
+                plus_FPS = 1000 / (plus_frameTimeBuffer.reduce((a, x) => a + x) / plus_frameTimeBuffer.length),
                 plus_frameTimeBuffer = [],
                 plus_FPS > 70 && (
                     plus_didThrottleFPS = true,
-                    setInterval($main, 1000 / 60),
-                    console.log('High FPS detected, throttling to 60')
+                    setInterval($main, 1000 / 60)
                 )
             )
         ),
 
-        !plus_didThrottleFPS && requestAnimationFrame($main)
+        !plus_didThrottleFPS &&
     //!end
-    //!2k
-        requestAnimationFrame($main)
-    //!end
+
+    requestAnimationFrame($main)
 ),
 $main()
