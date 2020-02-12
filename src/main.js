@@ -1,29 +1,34 @@
 //!plus
-plus_audioIsInit = false;
+    plus_audioIsInit = false;
 
-plus_jumps = [Math.pow(2,-6/12), 1, Math.pow(2,-6/12), Math.pow(2,3/12)];
-plus_jumpIndex = 0;
+    plus_jumps = [Math.pow(2,-6/12), 1, Math.pow(2,-6/12), Math.pow(2,3/12)];
+    plus_jumpIndex = 0;
 
-plus_jumpSound = {rate(){}, play(){}};
-plus_winSound  = {rate(){}, play(){}};
-plus_hitSound  = {rate(){}, play(){}};
+    plus_jumpSound = {rate(){}, play(){}};
+    plus_winSound  = {rate(){}, play(){}};
+    plus_hitSound  = {rate(){}, play(){}};
 
-plus_initAudio = () => {
-    if (plus_audioIsInit) return;
-    plus_audioIsInit = true;
+    plus_initAudio = () => {
+        if (plus_audioIsInit) return;
+        plus_audioIsInit = true;
 
-    new Howl({
-        src: ['music.mp3'],
-        autoplay: true,
-        volume: .2,
-        loop: true,
-    }).play();
+        new Howl({
+            src: ['music.mp3'],
+            autoplay: true,
+            volume: .2,
+            loop: true,
+        }).play();
 
-    plus_jumpSound = new Howl({ src: ['jump.wav'], volume: .4 });
-    plus_winSound  = new Howl({ src: ['win.wav'],  volume: .3 });
-    plus_hitSound  = new Howl({ src: ['thud.wav'], });
-};
-plus_soundPixel = Uint8Array.from([0,0,0,0]);
+        plus_jumpSound = new Howl({ src: ['jump.wav'], volume: .4 });
+        plus_winSound  = new Howl({ src: ['win.wav'],  volume: .3 });
+        plus_hitSound  = new Howl({ src: ['thud.wav'], });
+    };
+
+    plus_soundPixel = Uint8Array.from([0,0,0,0]);
+
+    plus_didMeasureFPS = false;
+    plus_lastFrameTime = 0;
+    plus_frameTimeBuffer = [];
 //!end
 
 $shader = g.createProgram(),
@@ -128,16 +133,30 @@ $main = $a => (
     s.innerText = $scoreFormat($frames, $track),
 
     //!plus
-    g.readPixels(4, 0, 1, 1, g.RGBA, 5121, plus_soundPixel),
-    plus_soundPixel[0] > 100 && (
-        plus_jumpSound.rate(plus_jumps[plus_jumpIndex]),
-        plus_jumpSound.play(),
-        plus_jumpIndex = (plus_jumpIndex + 1) % plus_jumps.length
-    ),
-    plus_soundPixel[1] > 100 && (
-        plus_hitSound.rate(.8 + .4*Math.random()),
-        plus_hitSound.play()
-    ),
+        g.readPixels(4, 0, 1, 1, g.RGBA, 5121, plus_soundPixel),
+
+        plus_soundPixel[0] > 100 && (
+            plus_jumpSound.rate(plus_jumps[plus_jumpIndex]),
+            plus_jumpSound.play(),
+            plus_jumpIndex = (plus_jumpIndex + 1) % plus_jumps.length
+        ),
+
+        plus_soundPixel[1] > 100 && (
+            plus_hitSound.rate(.8 + .4*Math.random()),
+            plus_hitSound.play()
+        ),
+
+        !plus_didMeasureFPS && $frames > 30 && (
+            plus_nuFrameTime = performance.now(),
+            plus_lastFrameTime !== 0 && plus_frameTimeBuffer.push(plus_nuFrameTime - plus_lastFrameTime),
+            plus_lastFrameTime = plus_nuFrameTime,
+
+            plus_frameTimeBuffer.length > 30 && (
+                plus_FPS = plus_frameTimeBuffer.reduce((a, x) => a + x) / plus_frameTimeBuffer.length,
+                console.log('FPS: ' + 1000/plus_FPS),
+                plus_didMeasureFPS = true
+            )
+        ),
     //!end
 
     requestAnimationFrame($main)
