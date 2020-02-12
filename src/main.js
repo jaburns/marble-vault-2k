@@ -26,7 +26,7 @@
 
     plus_soundPixel = Uint8Array.from([0,0,0,0]);
 
-    plus_didMeasureFPS = false;
+    plus_didThrottleFPS = false;
     plus_lastFrameTime = 0;
     plus_frameTimeBuffer = [];
 //!end
@@ -146,19 +146,26 @@ $main = $a => (
             plus_hitSound.play()
         ),
 
-        !plus_didMeasureFPS && $frames > 30 && (
+        !plus_didThrottleFPS && $frames > 30 && (
             plus_nuFrameTime = performance.now(),
             plus_lastFrameTime !== 0 && plus_frameTimeBuffer.push(plus_nuFrameTime - plus_lastFrameTime),
             plus_lastFrameTime = plus_nuFrameTime,
 
             plus_frameTimeBuffer.length > 30 && (
                 plus_FPS = plus_frameTimeBuffer.reduce((a, x) => a + x) / plus_frameTimeBuffer.length,
-                console.log('FPS: ' + 1000/plus_FPS),
-                plus_didMeasureFPS = true
+                plus_frameTimeBuffer = [],
+                plus_FPS > 70 && (
+                    plus_didThrottleFPS = true,
+                    setInterval($main, 1000 / 60),
+                    console.log('High FPS detected, throttling to 60')
+                )
             )
         ),
-    //!end
 
-    requestAnimationFrame($main)
+        !plus_didThrottleFPS && requestAnimationFrame($main)
+    //!end
+    //!2k
+        requestAnimationFrame($main)
+    //!end
 ),
 $main()
