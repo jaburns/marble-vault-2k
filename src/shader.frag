@@ -240,8 +240,18 @@ void main()
     ) / 4., 1);
 
     // If we're in the bottom left, update the game state and write the updated game state pixels
+    //!plus
+    if (coord.y < 1. && coord.x < 5.)
+    //!end
+    //!2k
     if (coord.y < 1. && coord.x < 4.)
+    //!end
     {
+        //!plus
+        int jumpSound = 0;
+        int hitSound = 0;
+        //!end
+
         vel.y -= .02;
         pos += .05 * vel;
         angle += omega;
@@ -254,6 +264,10 @@ void main()
                 pos += norm * (map(pos) + .055);
                 vel = dot(vel, tang) * tang;
                 omega = .6 * length(vel) * sign(vel.x*norm.y - vel.y*norm.x);
+
+                //!plus
+                if (counter > 0.) hitSound = 255;
+                //!end
             }
             counter = 0.;
         } else {
@@ -267,6 +281,10 @@ void main()
         if (counter < 7. && mod(i_KEYS, 2.) > 0.) {
             counter = 7.;
             vel.y = max(.5,vel.y+.5);
+
+            //!plus
+            jumpSound = 255;
+            //!end
         }
 
         pos /= 3.5;
@@ -281,12 +299,11 @@ void main()
                 0,
                 counter/255.
             );
-    }
 
-//!plus
-    if (coord.y < 1. && coord.x >= 4. && coord.x < 5.) {
-        gl_FragColor = vec4(1,0,1,1);
+        //!plus
+        if (coord.x >= 4. && coord.x < 5.) {
+            gl_FragColor = vec4(ivec4(jumpSound, hitSound, 255, 255));
+        }
+        //!end
     }
-//!end
-
 }

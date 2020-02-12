@@ -1,3 +1,31 @@
+//!plus
+plus_audioIsInit = false;
+
+plus_jumps = [Math.pow(2,-6/12), 1, Math.pow(2,-6/12), Math.pow(2,3/12)];
+plus_jumpIndex = 0;
+
+plus_jumpSound  = {rate(){}, play(){}}; 
+plus_stompSound = {rate(){}, play(){}}; 
+plus_hitSound   = {rate(){}, play(){}}; 
+
+plus_initAudio = () => {
+    if (plus_audioIsInit) return;
+    plus_audioIsInit = true;
+
+    new Howl({
+        src: ['music.mp3'],
+        autoplay: true,
+        volume: .2,
+        loop: true,
+    }).play();
+
+    plus_jumpSound = new Howl({ src: ['jump.wav'], volume: .8 });
+    plus_winSound  = new Howl({ src: ['win.wav'],  volume: .3 });
+    plus_hitSound  = new Howl({ src: ['thud.wav'], });
+};
+plus_soundPixel = Uint8Array.from([0,0,0,0]);
+//!end
+
 $shader = g.createProgram(),
 
 $a = __shader('shader.vert'),
@@ -49,7 +77,7 @@ $init = $a => (
 $init(),
 
 //!plus
-document.onkeydown = $a => ($keys[$a.keyCode] = !$a.repeat, $a.preventDefault()),
+document.onkeydown = $a => ($keys[$a.keyCode] = !$a.repeat, $a.preventDefault(), plus_initAudio()),
 //!end
 //!2k
 document.onkeydown = $a => $keys[$a.keyCode] = !$a.repeat,
@@ -83,6 +111,9 @@ $main = $a => (
         $cameraOffset = $camFromBall + $ballPos,
         $frames++,
         $win = $ballPos > 10
+        //!plus
+        , $win && plus_winSound.play()
+        //!end
     ),
     $win > 180 && $init(),
 
@@ -92,16 +123,19 @@ $main = $a => (
 
     s.innerText = $scoreFormat($frames, `Track#` + $track),
 
+    //!plus
+    g.readPixels(4, 0, 1, 1, g.RGBA, 5121, plus_soundPixel),
+    plus_soundPixel[0] > 100 && (
+        plus_jumpSound.rate(plus_jumps[plus_jumpIndex]),
+        plus_jumpSound.play(),
+        plus_jumpIndex = (plus_jumpIndex + 1) % plus_jumps.length
+    ),
+    plus_soundPixel[1] > 100 && (
+        plus_hitSound.rate(.8 + .4*Math.random()),
+        plus_hitSound.play()
+    ),
+    //!end
+
     requestAnimationFrame($main)
 ),
 $main()
-
-//!plus
-;
-sound = new Howl({
-  src: ['music.mp3'],
-  autoplay: true,
-  loop: true,
-});
-sound.play();
-//!end
