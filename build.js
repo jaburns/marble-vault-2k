@@ -141,7 +141,7 @@ const main = () => {
 
     shell.cd(BUILD_DIR);
     if (MODE === 'plus') {
-        shell.exec('..\\tools\\advzip.exe -q -a -4 ../'+ZIP_NAME+' '+HTML_NAME+' *.wav *.mp3');
+        shell.exec('..\\tools\\advzip.exe -q -a -4 ../'+ZIP_NAME+' *.*');
     } else {
         shell.exec('..\\tools\\advzip.exe -q -a -4 ../'+ZIP_NAME+' '+HTML_NAME);
     }
