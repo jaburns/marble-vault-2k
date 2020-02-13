@@ -19,12 +19,7 @@ const applyBuildRegions = source => {
         .map(x => x.trim())
         .forEach(line => {
             if (line.startsWith('//!')) {
-                if (line === '//!end') {
-                    reading = true;
-                }
-                else if (line !== '//!'+MODE) {
-                    reading = false;
-                }
+                reading = line === '//!end' || line === '//!'+MODE;
             } else {
                 if (reading) result.push(line);
             }
@@ -132,26 +127,26 @@ const main = () => {
 
     const shimHTML = minifyHTML(applyBuildRegions(fs.readFileSync(SRC_DIR + '/index.html', 'utf8')));
 
-    shell.mkdir('-p', 'docs');
+    if (MODE === '2k') shell.mkdir('-p', 'docs');
 
-    const HTML_NAME = MODE === 'plus' ? 'index.html' : 'a.html';
+    const HTML_NAME = MODE === 'plus' ? 'plus/index.html' : 'docs/a.html';
     const ZIP_NAME = `marble-vault-${MODE}.zip`;
 
-    fs.writeFileSync(`docs/${HTML_NAME}`,
+    fs.writeFileSync(`${HTML_NAME}`,
         shimHTML.replace(/__CODE__[^]*/,'')
         + js.trim()
         + shimHTML.replace(/[^_]*__CODE__/,'')
     );
 
-    shell.cd('docs');
-
     if (MODE === 'plus') {
+        shell.cd('plus');
         shell.exec('..\\tools\\advzip.exe -q -a -4 ../'+ZIP_NAME+' '+HTML_NAME+' *.wav *.mp3');
+        shell.cd('..');
     } else {
+        shell.cd('docs');
         shell.exec('..\\tools\\advzip.exe -q -a -4 ../'+ZIP_NAME+' '+HTML_NAME);
+        shell.cd('..');
     }
-
-    shell.cd('..');
 
     console.log('Zipped: ' + fs.statSync(ZIP_NAME).size + ' / 2048');
     console.log('');
