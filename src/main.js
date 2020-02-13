@@ -30,7 +30,7 @@ $scoreFormat = ($a, $b) => 'Track#' + $b + ':#' + ($a/60|0) + '.' + ($a=$a/.6%10
     $track = 0,
 
     $init = $a => (
-        $stateBuffer = Uint8Array.from($stateBufferArray = [0,0,0,0,128,1,128,1,255,1,192,1,0,100,0,0]),
+        $stateBuffer = Uint8Array.from($stateBufferArray = [0,0,0,0,128,1,128,1,255,1,192,1,0,100,0,7]),
 
         $track = Math.min(10, Math.max(1, $a ? $track : (
             $best = localStorage.getItem($track) || 5940,
@@ -114,7 +114,7 @@ $scoreFormat = ($a, $b) => 'Track#' + $b + ':#' + ($a/60|0) + '.' + ($a=$a/.6%10
 
     $init = ($a, redraw) => {
         if ($a) {
-            $stateBuffer = Uint8Array.from($stateBufferArray = [0,0,0,0,128,1,128,1,255,1,192,1,0,100,0,0]),
+            $stateBuffer = Uint8Array.from($stateBufferArray = [0,0,0,0,128,1,128,1,255,1,192,1,0,100,0,7]),
             $keys =
             $win =
             $ballPos = 
@@ -225,7 +225,7 @@ $main = $a => (
 
         plus_soundPixel[1] > 100 && (
             plus_playerScreenX = $stateBufferArray[4]/255 + $stateBufferArray[5]/255/255,
-            plus_playerScreenX < .9 && (
+            plus_playerScreenX > .1 && plus_playerScreenX < .9 && (
                 plus_hitSound.rate(.8 + .4*Math.random()),
                 plus_hitSound.play()
             )
