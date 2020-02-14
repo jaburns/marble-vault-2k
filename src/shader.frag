@@ -69,7 +69,7 @@ float divot(vec2 p, float b)
 
     // Move in to the local space of the divot, offset vertically by some random amount
     p = vec2(
-        abs( mod(p.x+.5,1.) - x ),
+        abs( mod(p.x+.5,1.) - b ),
         p.y + rand(p.x+b+9.)*track/7. + .5 - track/10.
     );
 
