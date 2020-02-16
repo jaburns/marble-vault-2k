@@ -1,6 +1,6 @@
-### [Marble Vault](https://jaburns.itch.io/marble-vault) (WebGL 2k and Plus versions)
+## [Marble Vault](https://jaburns.itch.io/marble-vault) (WebGL 2k and Plus versions)
 
-#### Building
+### Building
 Currently only Windows is supported by the build system, but versions of the binary dependencies exist for other operating systems.
 ```
 npm install
